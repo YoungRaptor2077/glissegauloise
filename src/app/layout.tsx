@@ -12,23 +12,54 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Glisse Gauloise - Premium Skate & Glisse",
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL || "https://glissegauloisse.fr"
+  ),
+  title: {
+    default: "GlisseGauloisse - Skateboard, Longboard & Surfskate Premium",
+    template: "%s | GlisseGauloisse",
+  },
   description:
-    "La plateforme premium de glisse en France. Skateboard, longboard, surfskate et accessoires haut de gamme.",
+    "Boutique en ligne de skateboard, longboard et surfskate premium a Eaubonne (95). Vente, reparation et conseils personnalises. Livraison en France.",
   keywords: [
     "skateboard",
     "longboard",
     "surfskate",
-    "glisse",
+    "glisse urbaine",
+    "reparation skate",
+    "boutique skate",
+    "Eaubonne",
+    "Val d'Oise",
+    "France",
     "premium",
-    "france",
+    "accessoires skate",
   ],
+  authors: [{ name: "GlisseGauloisse" }],
+  creator: "GlisseGauloisse",
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
   openGraph: {
-    title: "Glisse Gauloise - Premium Skate & Glisse",
+    title: "GlisseGauloisse - Skateboard, Longboard & Surfskate Premium",
     description:
-      "La plateforme premium de glisse en France. Skateboard, longboard, surfskate et accessoires haut de gamme.",
+      "Boutique en ligne de skateboard, longboard et surfskate premium. Vente, reparation et conseils personnalises.",
     type: "website",
     locale: "fr_FR",
+    siteName: "GlisseGauloisse",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "GlisseGauloisse - Skateboard, Longboard & Surfskate Premium",
+    description:
+      "Boutique en ligne de skateboard, longboard et surfskate premium. Vente, reparation et conseils personnalises.",
   },
 };
 

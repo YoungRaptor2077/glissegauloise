@@ -27,14 +27,15 @@ export const BUSINESS_HOURS: WeekSchedule = {
 
 export const COMPANY_INFO = {
   name: "GlisseGauloisse",
+  forme: "Entreprise Individuelle (EI)",
   address: "49 Route de Margency",
   city: "95600 Eaubonne",
   country: "France",
   phone: "07 86 75 79 63",
   email: "GlisseGauloisse.Service@outlook.fr",
-  siren: "",
-  siret: "",
-  tva: "",
+  siren: "993709013",
+  siret: "99370901300011",
+  tva: "FR55993709013",
 } as const;
 
 export const NAV_LINKS = [
