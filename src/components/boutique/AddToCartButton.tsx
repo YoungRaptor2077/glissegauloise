@@ -5,10 +5,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ShoppingCart, Check, Minus, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCart } from "@/lib/hooks/useCart";
-import type { ProductData } from "@/lib/data/products";
+import type { ProductDisplay } from "@/lib/data/product-adapter";
 
 interface AddToCartButtonProps {
-  product: ProductData;
+  product: ProductDisplay;
   className?: string;
 }
 

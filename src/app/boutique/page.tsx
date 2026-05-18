@@ -1,12 +1,14 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { motion } from "framer-motion";
-import { SlidersHorizontal, X } from "lucide-react";
+import { SlidersHorizontal, X, Loader2 } from "lucide-react";
 import { ProductFilters, type FilterState } from "@/components/boutique/ProductFilters";
 import { ProductGrid } from "@/components/boutique/ProductGrid";
 import { SearchBar } from "@/components/boutique/SearchBar";
-import { products } from "@/lib/data/products";
+import { createClient } from "@/lib/supabase/client";
+import { toProductDisplay, type ProductDisplay } from "@/lib/data/product-adapter";
+import type { Product } from "@/types/database";
 
 const defaultFilters: FilterState = {
   brands: [],
@@ -20,6 +22,45 @@ export default function BoutiquePage() {
   const [filters, setFilters] = useState<FilterState>(defaultFilters);
   const [search, setSearch] = useState("");
   const [showMobileFilters, setShowMobileFilters] = useState(false);
+  const [products, setProducts] = useState<ProductDisplay[]>([]);
+  const [brands, setBrands] = useState<string[]>([]);
+  const [categories, setCategories] = useState<{ name: string; slug: string }[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      const supabase = createClient();
+
+      const { data: productsData } = await supabase
+        .from("products")
+        .select("*, categories(name, slug)")
+        .eq("is_active", true) as { data: (Product & { categories: { name: string; slug: string } | null })[] | null };
+
+      if (productsData) {
+        const displayProducts = productsData.map((p) => toProductDisplay(p));
+        setProducts(displayProducts);
+
+        // Extract unique brands
+        const uniqueBrands = Array.from(
+          new Set(displayProducts.map((p) => p.brand).filter(Boolean))
+        ).sort();
+        setBrands(uniqueBrands);
+      }
+
+      const { data: categoriesData } = await supabase
+        .from("categories")
+        .select("name, slug")
+        .order("sort_order") as { data: { name: string; slug: string }[] | null };
+
+      if (categoriesData) {
+        setCategories(categoriesData);
+      }
+
+      setLoading(false);
+    };
+
+    fetchProducts();
+  }, []);
 
   const filteredProducts = useMemo(() => {
     let result = [...products];
@@ -70,7 +111,17 @@ export default function BoutiquePage() {
     }
 
     return result;
-  }, [search, filters]);
+  }, [search, filters, products]);
+
+  if (loading) {
+    return (
+      <section className="min-h-screen py-8 lg:py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-center py-32">
+          <Loader2 className="h-8 w-8 text-vert-neon animate-spin" />
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="min-h-screen py-8 lg:py-12">
@@ -85,12 +136,12 @@ export default function BoutiquePage() {
             Boutique
           </h1>
           <p className="text-blanc-casse/60">
-            Pièces et accessoires premium pour trottinettes électriques
+            Pieces et accessoires premium pour trottinettes electriques
           </p>
         </motion.div>
 
         <div className="mb-6">
-          <SearchBar value={search} onChange={setSearch} />
+          <SearchBar value={search} onChange={setSearch} categories={categories} />
         </div>
 
         <div className="lg:hidden mb-4">
@@ -121,7 +172,13 @@ export default function BoutiquePage() {
                 </button>
               </div>
               <div className="p-4">
-                <ProductFilters filters={filters} onChange={setFilters} className="border-0 bg-transparent" />
+                <ProductFilters
+                  filters={filters}
+                  onChange={setFilters}
+                  brands={brands}
+                  categories={categories}
+                  className="border-0 bg-transparent"
+                />
               </div>
             </div>
           </div>
@@ -129,7 +186,12 @@ export default function BoutiquePage() {
 
         <div className="flex gap-8">
           <aside className="hidden lg:block w-64 flex-shrink-0">
-            <ProductFilters filters={filters} onChange={setFilters} />
+            <ProductFilters
+              filters={filters}
+              onChange={setFilters}
+              brands={brands}
+              categories={categories}
+            />
           </aside>
 
           <div className="flex-1">

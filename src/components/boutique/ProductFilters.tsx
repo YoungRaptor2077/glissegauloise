@@ -4,7 +4,6 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, Filter } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { brands, categories } from "@/lib/data/products";
 
 export interface FilterState {
   brands: string[];
@@ -17,6 +16,8 @@ export interface FilterState {
 interface ProductFiltersProps {
   filters: FilterState;
   onChange: (filters: FilterState) => void;
+  brands?: string[];
+  categories?: { name: string; slug: string }[];
   className?: string;
 }
 
@@ -65,6 +66,8 @@ function FilterSection({
 export function ProductFilters({
   filters,
   onChange,
+  brands = [],
+  categories = [],
   className,
 }: ProductFiltersProps) {
   const toggleBrand = (brand: string) => {
@@ -104,7 +107,7 @@ export function ProductFilters({
         </div>
       </FilterSection>
 
-      <FilterSection title="Catégorie">
+      <FilterSection title="Categorie">
         <div className="space-y-1">
           <button
             onClick={() => onChange({ ...filters, category: "" })}
@@ -166,7 +169,7 @@ export function ProductFilters({
         </div>
       </FilterSection>
 
-      <FilterSection title="Disponibilité">
+      <FilterSection title="Disponibilite">
         <label className="flex items-center gap-2.5 cursor-pointer">
           <input
             type="checkbox"
@@ -186,10 +189,10 @@ export function ProductFilters({
           onChange={(e) => onChange({ ...filters, sortBy: e.target.value })}
           className="w-full px-3 py-2 rounded-lg bg-gris-anthracite-light/50 border border-white/10 text-sm text-blanc-casse focus:outline-none focus:border-vert-neon/50"
         >
-          <option value="popularite">Popularité</option>
-          <option value="nouveautes">Nouveautés</option>
+          <option value="popularite">Popularite</option>
+          <option value="nouveautes">Nouveautes</option>
           <option value="prix-asc">Prix croissant</option>
-          <option value="prix-desc">Prix décroissant</option>
+          <option value="prix-desc">Prix decroissant</option>
         </select>
       </FilterSection>
     </div>

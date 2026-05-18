@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
-import { products } from "@/lib/data/products";
+import { createServiceClient } from "@/lib/supabase/service";
 
 interface CartItemPayload {
   id: string;
@@ -32,10 +32,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate prices server-side from the product catalog
+    const supabase = createServiceClient();
+
+    // Validate prices server-side from Supabase products table
     const lineItems = [];
     for (const item of items) {
-      const catalogProduct = products.find((p) => p.id === item.id);
+      const { data: catalogProduct } = await supabase
+        .from("products")
+        .select("id, name, price")
+        .eq("id", item.id)
+        .single() as { data: { id: string; name: string; price: number } | null };
+
       if (!catalogProduct) {
         return NextResponse.json(
           { error: `Produit inconnu: ${item.id}` },

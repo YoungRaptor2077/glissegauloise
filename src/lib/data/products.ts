@@ -1,3 +1,5 @@
+// @deprecated - This file contains static fallback data. Real data is fetched from Supabase.
+
 export interface ProductData {
   id: string;
   name: string;
