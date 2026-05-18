@@ -29,7 +29,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { data: profile } = await authClient
+    const serviceClient = createServiceClient();
+    const { data: profile } = await serviceClient
       .from("profiles")
       .select("role")
       .eq("id", user.id)

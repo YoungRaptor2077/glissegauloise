@@ -2,16 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { createClient } from "@/lib/supabase/server";
 
-interface TarifPayload {
+interface CategoryPayload {
   id?: string;
-  title: string;
-  price_range: string;
-  description: string;
-  features: string[];
-  icon_name: string;
-  highlighted: boolean;
-  sort_order: number;
-  is_active: boolean;
+  name: string;
+  slug: string;
+  description?: string;
+  parent_id?: string | null;
+  sort_order?: number;
 }
 
 async function verifyAdmin() {
@@ -36,23 +33,23 @@ export async function GET() {
     const supabase = createServiceClient();
 
     const { data, error } = await supabase
-      .from("tarifs")
+      .from("categories")
       .select("*")
       .order("sort_order", { ascending: true });
 
     if (error) {
-      console.error("Error fetching tarifs:", error);
+      console.error("Error fetching categories:", error);
       return NextResponse.json(
-        { error: "Erreur lors de la recuperation des tarifs" },
+        { error: "Erreur lors de la recuperation des categories" },
         { status: 500 }
       );
     }
 
-    return NextResponse.json({ tarifs: data || [] });
+    return NextResponse.json({ categories: data || [] });
   } catch (error) {
-    console.error("Tarifs fetch error:", error);
+    console.error("Categories fetch error:", error);
     return NextResponse.json(
-      { error: "Erreur lors de la recuperation des tarifs" },
+      { error: "Erreur lors de la recuperation des categories" },
       { status: 500 }
     );
   }
@@ -65,11 +62,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Non autorise" }, { status: 401 });
     }
 
-    const body = (await request.json()) as TarifPayload;
+    const body = (await request.json()) as CategoryPayload;
 
-    if (!body.title || !body.price_range) {
+    if (!body.name || !body.slug) {
       return NextResponse.json(
-        { error: "Le titre et la fourchette de prix sont obligatoires" },
+        { error: "Les champs nom et slug sont obligatoires" },
         { status: 400 }
       );
     }
@@ -77,33 +74,30 @@ export async function POST(request: NextRequest) {
     const supabase = createServiceClient();
 
     const { data, error } = await supabase
-      .from("tarifs")
+      .from("categories")
       .insert({
-        title: body.title,
-        price_range: body.price_range,
-        description: body.description || "",
-        features: body.features || [],
-        icon_name: body.icon_name || "Settings",
-        highlighted: body.highlighted ?? false,
+        name: body.name,
+        slug: body.slug,
+        description: body.description || null,
+        parent_id: body.parent_id || null,
         sort_order: body.sort_order ?? 0,
-        is_active: body.is_active ?? true,
       })
       .select()
       .single();
 
     if (error) {
-      console.error("Error creating tarif:", error);
+      console.error("Error creating category:", error);
       return NextResponse.json(
-        { error: "Erreur lors de la creation du tarif" },
+        { error: "Erreur lors de la creation de la categorie" },
         { status: 500 }
       );
     }
 
-    return NextResponse.json({ tarif: data });
+    return NextResponse.json({ category: data });
   } catch (error) {
-    console.error("Tarif creation error:", error);
+    console.error("Category creation error:", error);
     return NextResponse.json(
-      { error: "Erreur lors de la creation du tarif" },
+      { error: "Erreur lors de la creation de la categorie" },
       { status: 500 }
     );
   }
@@ -116,11 +110,11 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: "Non autorise" }, { status: 401 });
     }
 
-    const body = (await request.json()) as TarifPayload;
+    const body = (await request.json()) as CategoryPayload;
 
     if (!body.id) {
       return NextResponse.json(
-        { error: "L'identifiant du tarif est requis" },
+        { error: "L'identifiant de la categorie est requis" },
         { status: 400 }
       );
     }
@@ -128,34 +122,31 @@ export async function PUT(request: NextRequest) {
     const supabase = createServiceClient();
 
     const { data, error } = await supabase
-      .from("tarifs")
+      .from("categories")
       .update({
-        title: body.title,
-        price_range: body.price_range,
-        description: body.description || "",
-        features: body.features || [],
-        icon_name: body.icon_name || "Settings",
-        highlighted: body.highlighted ?? false,
+        name: body.name,
+        slug: body.slug,
+        description: body.description || null,
+        parent_id: body.parent_id || null,
         sort_order: body.sort_order ?? 0,
-        is_active: body.is_active ?? true,
       })
       .eq("id", body.id)
       .select()
       .single();
 
     if (error) {
-      console.error("Error updating tarif:", error);
+      console.error("Error updating category:", error);
       return NextResponse.json(
-        { error: "Erreur lors de la mise a jour du tarif" },
+        { error: "Erreur lors de la mise a jour de la categorie" },
         { status: 500 }
       );
     }
 
-    return NextResponse.json({ tarif: data });
+    return NextResponse.json({ category: data });
   } catch (error) {
-    console.error("Tarif update error:", error);
+    console.error("Category update error:", error);
     return NextResponse.json(
-      { error: "Erreur lors de la mise a jour du tarif" },
+      { error: "Erreur lors de la mise a jour de la categorie" },
       { status: 500 }
     );
   }
@@ -173,28 +164,28 @@ export async function DELETE(request: NextRequest) {
 
     if (!id) {
       return NextResponse.json(
-        { error: "L'identifiant du tarif est requis" },
+        { error: "L'identifiant de la categorie est requis" },
         { status: 400 }
       );
     }
 
     const supabase = createServiceClient();
 
-    const { error } = await supabase.from("tarifs").delete().eq("id", id);
+    const { error } = await supabase.from("categories").delete().eq("id", id);
 
     if (error) {
-      console.error("Error deleting tarif:", error);
+      console.error("Error deleting category:", error);
       return NextResponse.json(
-        { error: "Erreur lors de la suppression du tarif" },
+        { error: "Erreur lors de la suppression de la categorie" },
         { status: 500 }
       );
     }
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Tarif deletion error:", error);
+    console.error("Category deletion error:", error);
     return NextResponse.json(
-      { error: "Erreur lors de la suppression du tarif" },
+      { error: "Erreur lors de la suppression de la categorie" },
       { status: 500 }
     );
   }

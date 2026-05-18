@@ -24,7 +24,8 @@ async function verifyAdmin() {
     return { error: NextResponse.json({ error: "Non autorise" }, { status: 401 }) };
   }
 
-  const { data: profile } = await authClient
+  const serviceClient = createServiceClient();
+  const { data: profile } = await serviceClient
     .from("profiles")
     .select("role")
     .eq("id", user.id)
