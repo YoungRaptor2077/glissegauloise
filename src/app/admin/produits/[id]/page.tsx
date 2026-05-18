@@ -53,7 +53,7 @@ export default function EditProduitPage() {
           description: product.description || "",
           price: String(product.price),
           compareAtPrice: product.compare_at_price ? String(product.compare_at_price) : "",
-          stock: String(product.stock_quantity),
+          stock: String(product.stock),
           categoryId: product.category_id || "",
           brand: product.brand || "",
           images: product.images || [],

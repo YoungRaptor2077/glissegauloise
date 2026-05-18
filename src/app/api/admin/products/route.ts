@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
       .single();
 
     const profileRole = (profile as { role: string } | null)?.role;
-    if (!profileRole || profileRole !== "admin") {
+    if (!profileRole || !["admin", "super_admin"].includes(profileRole)) {
       return NextResponse.json(
         { error: "Acces interdit" },
         { status: 403 }
@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
       description: body.description || null,
       price: parseFloat(body.price),
       compare_at_price: body.compareAtPrice ? parseFloat(body.compareAtPrice) : null,
-      stock_quantity: body.stock ? parseInt(body.stock, 10) : 0,
+      stock: body.stock ? parseInt(body.stock, 10) : 0,
       category_id: body.categoryId || null,
       images: body.images || [],
       is_featured: body.isFeatured ?? false,

@@ -91,7 +91,7 @@ export interface Database {
           images: string[];
           compatibility: string[];
           specifications: Json | null;
-          stock_quantity: number;
+          stock: number;
           is_active: boolean;
           is_featured: boolean;
           stripe_price_id: string | null;
@@ -110,7 +110,7 @@ export interface Database {
           images?: string[];
           compatibility?: string[];
           specifications?: Json | null;
-          stock_quantity?: number;
+          stock?: number;
           is_active?: boolean;
           is_featured?: boolean;
           stripe_price_id?: string | null;
@@ -129,7 +129,7 @@ export interface Database {
           images?: string[];
           compatibility?: string[];
           specifications?: Json | null;
-          stock_quantity?: number;
+          stock?: number;
           is_active?: boolean;
           is_featured?: boolean;
           stripe_price_id?: string | null;

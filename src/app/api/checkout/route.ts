@@ -39,9 +39,9 @@ export async function POST(request: NextRequest) {
     for (const item of items) {
       const { data: catalogProduct } = await supabase
         .from("products")
-        .select("id, name, price, is_active, stock_quantity")
+        .select("id, name, price, is_active, stock")
         .eq("id", item.id)
-        .single() as { data: { id: string; name: string; price: number; is_active: boolean; stock_quantity: number } | null };
+        .single() as { data: { id: string; name: string; price: number; is_active: boolean; stock: number } | null };
 
       if (!catalogProduct) {
         return NextResponse.json(
@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      if (catalogProduct.stock_quantity < item.quantity) {
+      if (catalogProduct.stock < item.quantity) {
         return NextResponse.json(
           { error: `Stock insuffisant pour: ${catalogProduct.name}` },
           { status: 400 }

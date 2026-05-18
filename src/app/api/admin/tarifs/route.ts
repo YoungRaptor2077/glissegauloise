@@ -29,7 +29,7 @@ async function verifyAdmin() {
     .single();
 
   const profileRole = (profile as { role: string } | null)?.role;
-  if (!profileRole || profileRole !== "admin") return null;
+  if (!profileRole || !["admin", "super_admin"].includes(profileRole)) return null;
 
   return user;
 }

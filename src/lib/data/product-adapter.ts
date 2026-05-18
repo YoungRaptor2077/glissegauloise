@@ -50,7 +50,7 @@ export function toProductDisplay(
     category: catName,
     categorySlug: catSlug,
     images: dbProduct.images || [],
-    stockQuantity: dbProduct.stock_quantity,
+    stockQuantity: dbProduct.stock,
     isActive: dbProduct.is_active,
     isFeatured: dbProduct.is_featured,
     compatibility: dbProduct.compatibility || [],

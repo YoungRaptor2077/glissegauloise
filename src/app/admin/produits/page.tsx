@@ -56,14 +56,14 @@ export default function ProduitsPage() {
         setProducts(
           data.map((p) => {
             let status = "Actif";
-            if (p.stock_quantity === 0) status = "Rupture";
+            if (p.stock === 0) status = "Rupture";
             else if (!p.is_active) status = "Brouillon";
             return {
               id: p.id,
               name: p.name,
               category: (p.category_id && categoryMap[p.category_id]) || "-",
               price: p.price,
-              stock: p.stock_quantity,
+              stock: p.stock,
               status,
             };
           })
