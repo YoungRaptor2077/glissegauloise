@@ -99,12 +99,13 @@ export function Header() {
               </button>
 
               {/* User button - desktop only */}
-              <button
+              <Link
+                href="/espace-client"
                 className="hidden rounded-lg p-2 text-blanc-casse/70 transition-colors hover:bg-gris-anthracite-light hover:text-blanc-casse lg:block"
                 aria-label="Mon compte"
               >
                 <User size={20} />
-              </button>
+              </Link>
 
               {/* Mobile menu button */}
               <button

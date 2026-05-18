@@ -345,6 +345,48 @@ export interface Database {
         };
         Relationships: [];
       };
+      tarifs: {
+        Row: {
+          id: string;
+          title: string;
+          price_range: string;
+          description: string | null;
+          features: string[];
+          icon_name: string;
+          highlighted: boolean;
+          sort_order: number;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          title: string;
+          price_range: string;
+          description?: string | null;
+          features?: string[];
+          icon_name?: string;
+          highlighted?: boolean;
+          sort_order?: number;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          title?: string;
+          price_range?: string;
+          description?: string | null;
+          features?: string[];
+          icon_name?: string;
+          highlighted?: boolean;
+          sort_order?: number;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       contact_submissions: {
         Row: {
           id: string;

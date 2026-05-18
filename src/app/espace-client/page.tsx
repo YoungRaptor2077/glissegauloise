@@ -1,73 +1,177 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { ShoppingBag, Wrench, MessageSquare, FileText } from "lucide-react";
 import { useUser } from "@/lib/hooks/useUser";
+import { createClient } from "@/lib/supabase/client";
 
-const summaryCards = [
-  {
-    label: "Commandes en cours",
-    value: "2",
-    icon: ShoppingBag,
-    color: "text-blue-400",
-    bgColor: "bg-blue-500/10",
-    borderColor: "border-blue-500/20",
-  },
-  {
-    label: "Reparations en cours",
-    value: "1",
-    icon: Wrench,
-    color: "text-yellow-400",
-    bgColor: "bg-yellow-500/10",
-    borderColor: "border-yellow-500/20",
-  },
-  {
-    label: "Messages non lus",
-    value: "3",
-    icon: MessageSquare,
-    color: "text-vert-neon",
-    bgColor: "bg-vert-neon/10",
-    borderColor: "border-vert-neon/20",
-  },
-  {
-    label: "Devis en attente",
-    value: "1",
-    icon: FileText,
-    color: "text-purple-400",
-    bgColor: "bg-purple-500/10",
-    borderColor: "border-purple-500/20",
-  },
-];
+interface SummaryCard {
+  label: string;
+  value: string;
+  icon: typeof ShoppingBag;
+  color: string;
+  bgColor: string;
+  borderColor: string;
+}
 
-const recentActivity = [
-  {
-    id: "1",
-    type: "commande",
-    message: "Commande #1234 expediee",
-    date: "Il y a 2 heures",
-  },
-  {
-    id: "2",
-    type: "reparation",
-    message: "Reparation de votre board en cours",
-    date: "Il y a 1 jour",
-  },
-  {
-    id: "3",
-    type: "devis",
-    message: "Nouveau devis disponible",
-    date: "Il y a 3 jours",
-  },
-  {
-    id: "4",
-    type: "message",
-    message: "Nouveau message du service client",
-    date: "Il y a 5 jours",
-  },
-];
+interface Activity {
+  id: string;
+  message: string;
+  date: string;
+}
 
 export default function EspaceClientPage() {
-  const { profile } = useUser();
+  const { user, profile } = useUser();
+  const [summaryCards, setSummaryCards] = useState<SummaryCard[]>([
+    {
+      label: "Commandes en cours",
+      value: "0",
+      icon: ShoppingBag,
+      color: "text-blue-400",
+      bgColor: "bg-blue-500/10",
+      borderColor: "border-blue-500/20",
+    },
+    {
+      label: "Reparations en cours",
+      value: "0",
+      icon: Wrench,
+      color: "text-yellow-400",
+      bgColor: "bg-yellow-500/10",
+      borderColor: "border-yellow-500/20",
+    },
+    {
+      label: "Messages non lus",
+      value: "0",
+      icon: MessageSquare,
+      color: "text-vert-neon",
+      bgColor: "bg-vert-neon/10",
+      borderColor: "border-vert-neon/20",
+    },
+    {
+      label: "Devis en attente",
+      value: "0",
+      icon: FileText,
+      color: "text-purple-400",
+      bgColor: "bg-purple-500/10",
+      borderColor: "border-purple-500/20",
+    },
+  ]);
+  const [recentActivity, setRecentActivity] = useState<Activity[]>([]);
+
+  useEffect(() => {
+    if (!user) return;
+
+    async function fetchData() {
+      const supabase = createClient();
+
+      // Fetch active orders count (not delivered, not cancelled)
+      const { count: ordersCount } = await supabase
+        .from("orders")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user!.id)
+        .not("status", "in", '("delivered","cancelled")');
+
+      // Fetch active repairs count (not completed, not cancelled)
+      const { count: repairsCount } = await supabase
+        .from("repairs")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user!.id)
+        .not("status", "in", '("completed","cancelled")');
+
+      // Fetch unread messages count
+      // First get all conversation IDs for this user
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: conversations } = await (supabase as any)
+        .from("conversations")
+        .select("id")
+        .eq("user_id", user!.id);
+
+      let unreadCount = 0;
+      if (conversations && conversations.length > 0) {
+        const conversationIds = conversations.map((c: { id: string }) => c.id);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { count } = await (supabase as any)
+          .from("messages")
+          .select("*", { count: "exact", head: true })
+          .in("conversation_id", conversationIds)
+          .eq("is_read", false)
+          .neq("sender_id", user!.id);
+        unreadCount = count || 0;
+      }
+
+      // Fetch pending/sent quotes count
+      const { count: quotesCount } = await supabase
+        .from("quotes")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user!.id)
+        .in("status", ["draft", "sent"]);
+
+      setSummaryCards([
+        {
+          label: "Commandes en cours",
+          value: String(ordersCount || 0),
+          icon: ShoppingBag,
+          color: "text-blue-400",
+          bgColor: "bg-blue-500/10",
+          borderColor: "border-blue-500/20",
+        },
+        {
+          label: "Reparations en cours",
+          value: String(repairsCount || 0),
+          icon: Wrench,
+          color: "text-yellow-400",
+          bgColor: "bg-yellow-500/10",
+          borderColor: "border-yellow-500/20",
+        },
+        {
+          label: "Messages non lus",
+          value: String(unreadCount),
+          icon: MessageSquare,
+          color: "text-vert-neon",
+          bgColor: "bg-vert-neon/10",
+          borderColor: "border-vert-neon/20",
+        },
+        {
+          label: "Devis en attente",
+          value: String(quotesCount || 0),
+          icon: FileText,
+          color: "text-purple-400",
+          bgColor: "bg-purple-500/10",
+          borderColor: "border-purple-500/20",
+        },
+      ]);
+
+      // Fetch recent activity from unread messages (last 5)
+      if (conversations && conversations.length > 0) {
+        const convIds = conversations.map((c: { id: string }) => c.id);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: recentMessages } = await (supabase as any)
+          .from("messages")
+          .select("id, content, created_at")
+          .in("conversation_id", convIds)
+          .neq("sender_id", user!.id)
+          .order("created_at", { ascending: false })
+          .limit(5);
+
+        if (recentMessages && recentMessages.length > 0) {
+          setRecentActivity(
+            recentMessages.map((msg: { id: string; content: string; created_at: string }) => ({
+              id: msg.id,
+              message: msg.content.length > 80 ? msg.content.slice(0, 80) + "..." : msg.content,
+              date: formatRelativeDate(msg.created_at),
+            }))
+          );
+        } else {
+          setRecentActivity([]);
+        }
+      } else {
+        setRecentActivity([]);
+      }
+    }
+
+    fetchData();
+  }, [user]);
 
   return (
     <div className="space-y-8">
@@ -121,21 +225,41 @@ export default function EspaceClientPage() {
           Activite recente
         </h2>
         <div className="space-y-3">
-          {recentActivity.map((activity) => (
-            <div
-              key={activity.id}
-              className="flex items-center justify-between py-3 border-b border-white/5 last:border-0"
-            >
-              <p className="text-sm text-blanc-casse/80">
-                {activity.message}
-              </p>
-              <span className="text-xs text-blanc-casse/50 whitespace-nowrap ml-4">
-                {activity.date}
-              </span>
-            </div>
-          ))}
+          {recentActivity.length === 0 ? (
+            <p className="text-sm text-blanc-casse/50">Aucune activite recente</p>
+          ) : (
+            recentActivity.map((activity) => (
+              <div
+                key={activity.id}
+                className="flex items-center justify-between py-3 border-b border-white/5 last:border-0"
+              >
+                <p className="text-sm text-blanc-casse/80">
+                  {activity.message}
+                </p>
+                <span className="text-xs text-blanc-casse/50 whitespace-nowrap ml-4">
+                  {activity.date}
+                </span>
+              </div>
+            ))
+          )}
         </div>
       </motion.div>
     </div>
   );
+}
+
+function formatRelativeDate(dateStr: string): string {
+  const date = new Date(dateStr);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMinutes = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+
+  if (diffMinutes < 1) return "A l'instant";
+  if (diffMinutes < 60) return `Il y a ${diffMinutes} min`;
+  if (diffHours < 24) return `Il y a ${diffHours}h`;
+  if (diffDays === 1) return "Hier";
+  if (diffDays < 7) return `Il y a ${diffDays} jours`;
+  return date.toLocaleDateString("fr-FR");
 }

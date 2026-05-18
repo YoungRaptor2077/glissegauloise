@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import {
   Search,
@@ -9,11 +10,32 @@ import {
   Battery,
   Settings,
   Paintbrush,
+  Wrench,
   AlertTriangle,
 } from "lucide-react";
 import { PricingCard } from "@/components/tarifs/PricingCard";
 
-const pricingData = [
+interface TarifData {
+  icon: React.ReactNode;
+  title: string;
+  priceRange: string;
+  description: string;
+  features: string[];
+  highlighted: boolean;
+}
+
+const iconMap: Record<string, React.ReactNode> = {
+  Search: <Search className="h-5 w-5" />,
+  CircleDot: <CircleDot className="h-5 w-5" />,
+  Disc3: <Disc3 className="h-5 w-5" />,
+  Cpu: <Cpu className="h-5 w-5" />,
+  Battery: <Battery className="h-5 w-5" />,
+  Settings: <Settings className="h-5 w-5" />,
+  Paintbrush: <Paintbrush className="h-5 w-5" />,
+  Wrench: <Wrench className="h-5 w-5" />,
+};
+
+const defaultPricingData: TarifData[] = [
   {
     icon: <Search className="h-5 w-5" />,
     title: "Diagnostic",
@@ -114,6 +136,38 @@ const pricingData = [
 ];
 
 export default function TarifsPage() {
+  const [pricingData, setPricingData] = useState<TarifData[]>(defaultPricingData);
+
+  useEffect(() => {
+    async function fetchTarifs() {
+      try {
+        const res = await fetch("/api/admin/tarifs");
+        const data = await res.json();
+
+        if (data.tarifs && data.tarifs.length > 0) {
+          const activeTarifs = data.tarifs
+            .filter((t: { is_active: boolean }) => t.is_active)
+            .map((t: { icon_name: string; title: string; price_range: string; description: string; features: string[]; highlighted: boolean }) => ({
+              icon: iconMap[t.icon_name] || <Settings className="h-5 w-5" />,
+              title: t.title,
+              priceRange: t.price_range,
+              description: t.description || "",
+              features: t.features || [],
+              highlighted: t.highlighted,
+            }));
+
+          if (activeTarifs.length > 0) {
+            setPricingData(activeTarifs);
+          }
+        }
+      } catch {
+        // Fallback to defaults silently
+      }
+    }
+
+    fetchTarifs();
+  }, []);
+
   return (
     <div className="min-h-screen py-16 lg:py-24">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
