@@ -1,13 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Upload, X } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { createClient } from "@/lib/supabase/client";
+import type { Category } from "@/types/database";
+
+interface CategoryOption {
+  id: string;
+  name: string;
+}
 
 export default function NouveauProduitPage() {
   const router = useRouter();
+  const [categories, setCategories] = useState<CategoryOption[]>([]);
   const [formData, setFormData] = useState({
     name: "",
     slug: "",
@@ -24,6 +32,22 @@ export default function NouveauProduitPage() {
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    async function fetchCategories() {
+      const supabase = createClient();
+      const { data } = await supabase
+        .from("categories")
+        .select("*")
+        .order("sort_order", { ascending: true }) as { data: Category[] | null };
+
+      if (data) {
+        setCategories(data);
+      }
+    }
+
+    fetchCategories();
+  }, []);
 
   const generateSlug = (name: string) => {
     return name
@@ -229,11 +253,11 @@ export default function NouveauProduitPage() {
                   className="w-full rounded-xl border border-white/10 bg-gris-anthracite px-4 py-2.5 text-sm text-blanc-casse focus:border-vert-neon/50 focus:outline-none focus:ring-1 focus:ring-vert-neon/30"
                 >
                   <option value="">Selectionner...</option>
-                  <option value="snowboards">Snowboards</option>
-                  <option value="skis">Skis</option>
-                  <option value="fixations">Fixations</option>
-                  <option value="boots">Boots</option>
-                  <option value="accessoires">Accessoires</option>
+                  {categories.map((cat) => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div>
