@@ -55,6 +55,7 @@ export default function CommandesPage() {
   const [orders, setOrders] = useState<OrderRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState<OrderRow | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchOrders() {
@@ -107,6 +108,7 @@ export default function CommandesPage() {
   }, []);
 
   const handleStatusChange = async (orderId: string, newStatus: string) => {
+    setError(null);
     const supabase = createClient();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabase.from("orders") as any)
@@ -117,6 +119,8 @@ export default function CommandesPage() {
       setOrders((prev) =>
         prev.map((o) => (o.rawId === orderId ? { ...o, status: newStatus } : o))
       );
+    } else {
+      setError("Erreur lors de la mise a jour du statut de la commande.");
     }
   };
 
@@ -190,6 +194,12 @@ export default function CommandesPage() {
           </button>
         ))}
       </div>
+
+      {error && (
+        <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+          {error}
+        </div>
+      )}
 
       <DataTable
         columns={columns}

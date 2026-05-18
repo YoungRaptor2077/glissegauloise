@@ -50,6 +50,7 @@ export default function AdminConversationDetailPage() {
   const [customer, setCustomer] = useState<CustomerInfo | null>(null);
   const [conversation, setConversation] = useState<ConversationInfo | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = useCallback(() => {
@@ -111,11 +112,14 @@ export default function AdminConversationDetailPage() {
       // Mark unread messages as read (those not sent by current admin)
       if (user) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await (supabase.from("messages") as any)
+        const { error: markError } = await (supabase.from("messages") as any)
           .update({ is_read: true })
           .eq("conversation_id", conversationId)
           .eq("is_read", false)
           .neq("sender_id", user.id);
+        if (markError) {
+          console.error("Failed to mark messages as read:", markError);
+        }
       }
 
       setLoading(false);
@@ -142,7 +146,10 @@ export default function AdminConversationDetailPage() {
         (supabase.from("messages") as any)
           .update({ is_read: true })
           .eq("id", newMsg.id)
-          .then(() => {});
+          .then(() => {})
+          .catch((err: unknown) => {
+            console.error("Failed to mark message as read:", err);
+          });
       }
     });
 
@@ -154,6 +161,7 @@ export default function AdminConversationDetailPage() {
   const handleSend = useCallback(
     async (content: string) => {
       if (!user || !conversationId) return;
+      setError(null);
       const supabase = createClient();
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -173,6 +181,8 @@ export default function AdminConversationDetailPage() {
           if (prev.some((m) => m.id === data.id)) return prev;
           return [...prev, data];
         });
+      } else if (error) {
+        setError("Erreur lors de l'envoi du message.");
       }
     },
     [user, conversationId]
@@ -180,6 +190,7 @@ export default function AdminConversationDetailPage() {
 
   const handleCloseConversation = async () => {
     if (!conversationId) return;
+    setError(null);
     const supabase = createClient();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabase.from("conversations") as any)
@@ -188,6 +199,8 @@ export default function AdminConversationDetailPage() {
 
     if (!error) {
       setConversation((prev) => prev ? { ...prev, status: "closed" } : null);
+    } else {
+      setError("Erreur lors de la fermeture de la conversation.");
     }
   };
 
@@ -237,6 +250,11 @@ export default function AdminConversationDetailPage() {
 
         {/* Messages */}
         <div className="flex-1 overflow-y-auto py-4 space-y-1">
+          {error && (
+            <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400 mb-2">
+              {error}
+            </div>
+          )}
           {messages.length === 0 ? (
             <p className="text-sm text-blanc-casse/40 text-center py-8">Aucun message</p>
           ) : (

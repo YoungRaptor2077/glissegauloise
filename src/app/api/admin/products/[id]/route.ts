@@ -10,6 +10,7 @@ interface ProductPayload {
   compareAtPrice: string;
   stock: string;
   categoryId: string;
+  brand: string;
   images: string[];
   isFeatured: boolean;
   isActive: boolean;
@@ -67,6 +68,7 @@ export async function PUT(
         compare_at_price: body.compareAtPrice ? parseFloat(body.compareAtPrice) : null,
         stock_quantity: body.stock ? parseInt(body.stock, 10) : 0,
         category_id: body.categoryId || null,
+        brand: body.brand || null,
         images: body.images || [],
         is_featured: body.isFeatured ?? false,
         is_active: body.isActive ?? true,

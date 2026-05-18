@@ -39,13 +39,27 @@ export async function POST(request: NextRequest) {
     for (const item of items) {
       const { data: catalogProduct } = await supabase
         .from("products")
-        .select("id, name, price")
+        .select("id, name, price, is_active, stock_quantity")
         .eq("id", item.id)
-        .single() as { data: { id: string; name: string; price: number } | null };
+        .single() as { data: { id: string; name: string; price: number; is_active: boolean; stock_quantity: number } | null };
 
       if (!catalogProduct) {
         return NextResponse.json(
           { error: `Produit inconnu: ${item.id}` },
+          { status: 400 }
+        );
+      }
+
+      if (!catalogProduct.is_active) {
+        return NextResponse.json(
+          { error: `Produit indisponible: ${catalogProduct.name}` },
+          { status: 400 }
+        );
+      }
+
+      if (catalogProduct.stock_quantity < item.quantity) {
+        return NextResponse.json(
+          { error: `Stock insuffisant pour: ${catalogProduct.name}` },
           { status: 400 }
         );
       }

@@ -32,6 +32,7 @@ export default function DevisPage() {
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchQuotes() {
@@ -61,6 +62,7 @@ export default function DevisPage() {
     newStatus: "accepted" | "rejected"
   ) => {
     setUpdating(quoteId);
+    setError(null);
     const supabase = createClient();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabase.from("quotes") as any)
@@ -71,6 +73,8 @@ export default function DevisPage() {
       setQuotes((prev) =>
         prev.map((q) => (q.id === quoteId ? { ...q, status: newStatus } : q))
       );
+    } else {
+      setError("Erreur lors de la mise a jour du devis.");
     }
     setUpdating(null);
   };
@@ -95,6 +99,12 @@ export default function DevisPage() {
           Consultez et gerez vos devis.
         </p>
       </motion.div>
+
+      {error && (
+        <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+          {error}
+        </div>
+      )}
 
       {quotes.length === 0 ? (
         <motion.div

@@ -28,6 +28,7 @@ export default function ProduitsPage() {
   const [products, setProducts] = useState<ProductRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchProducts() {
@@ -75,12 +76,15 @@ export default function ProduitsPage() {
   }, []);
 
   const handleDelete = async (productId: string) => {
+    setError(null);
     const response = await fetch(`/api/admin/products/${productId}`, {
       method: "DELETE",
     });
 
     if (response.ok) {
       setProducts((prev) => prev.filter((p) => p.id !== productId));
+    } else {
+      setError("Erreur lors de la suppression du produit.");
     }
     setDeleteConfirm(null);
     setMenuOpen(null);
@@ -149,6 +153,12 @@ export default function ProduitsPage() {
           Ajouter un produit
         </Link>
       </div>
+
+      {error && (
+        <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+          {error}
+        </div>
+      )}
 
       <DataTable
         columns={columns}

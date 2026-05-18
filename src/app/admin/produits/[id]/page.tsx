@@ -29,6 +29,7 @@ export default function EditProduitPage() {
     compareAtPrice: "",
     stock: "",
     categoryId: "",
+    brand: "",
     images: [] as string[],
     isFeatured: false,
     isActive: true,
@@ -54,6 +55,7 @@ export default function EditProduitPage() {
           compareAtPrice: product.compare_at_price ? String(product.compare_at_price) : "",
           stock: String(product.stock_quantity),
           categoryId: product.category_id || "",
+          brand: product.brand || "",
           images: product.images || [],
           isFeatured: product.is_featured,
           isActive: product.is_active,
@@ -190,6 +192,18 @@ export default function EditProduitPage() {
                   placeholder="Decrivez le produit..."
                   rows={5}
                   className="w-full rounded-xl border border-white/10 bg-gris-anthracite px-4 py-2.5 text-sm text-blanc-casse placeholder:text-blanc-casse/40 focus:border-vert-neon/50 focus:outline-none focus:ring-1 focus:ring-vert-neon/30 resize-none"
+                />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-blanc-casse/80">
+                  Marque
+                </label>
+                <input
+                  type="text"
+                  value={formData.brand}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, brand: e.target.value }))}
+                  placeholder="Ex: Xiaomi, Segway, Ninebot"
+                  className="w-full rounded-xl border border-white/10 bg-gris-anthracite px-4 py-2.5 text-sm text-blanc-casse placeholder:text-blanc-casse/40 focus:border-vert-neon/50 focus:outline-none focus:ring-1 focus:ring-vert-neon/30"
                 />
               </div>
             </div>

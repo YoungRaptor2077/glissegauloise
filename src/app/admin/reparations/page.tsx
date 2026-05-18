@@ -55,6 +55,7 @@ export default function ReparationsPage() {
   const [repairs, setRepairs] = useState<RepairRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedRepair, setSelectedRepair] = useState<RepairRow | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchRepairs() {
@@ -103,6 +104,7 @@ export default function ReparationsPage() {
   }, []);
 
   const handleStatusChange = async (repairId: string, newStatus: string) => {
+    setError(null);
     const supabase = createClient();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabase.from("repairs") as any)
@@ -116,6 +118,8 @@ export default function ReparationsPage() {
       if (selectedRepair?.rawId === repairId) {
         setSelectedRepair((prev) => prev ? { ...prev, status: newStatus } : null);
       }
+    } else {
+      setError("Erreur lors de la mise a jour du statut de la reparation.");
     }
   };
 
@@ -187,6 +191,12 @@ export default function ReparationsPage() {
           </button>
         ))}
       </div>
+
+      {error && (
+        <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+          {error}
+        </div>
+      )}
 
       <DataTable
         columns={columns}
