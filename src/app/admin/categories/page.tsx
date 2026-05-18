@@ -1,46 +1,18 @@
 "use client";
 
-import { useState } from "react";
-import { Plus, Edit, Trash2, FolderTree, ChevronRight } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Plus, Edit, Trash2, FolderTree, ChevronRight, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface Category {
   id: string;
   name: string;
   slug: string;
-  description: string;
-  productCount: number;
+  description: string | null;
+  parent_id: string | null;
+  sort_order: number;
   children?: Category[];
 }
-
-const mockCategories: Category[] = [
-  {
-    id: "1",
-    name: "Snowboards",
-    slug: "snowboards",
-    description: "Planches de snowboard pour tous niveaux",
-    productCount: 24,
-    children: [
-      { id: "1-1", name: "All-Mountain", slug: "all-mountain", description: "Polyvalence", productCount: 10 },
-      { id: "1-2", name: "Freestyle", slug: "freestyle", description: "Park et tricks", productCount: 8 },
-      { id: "1-3", name: "Freeride", slug: "freeride", description: "Poudreuse et hors-piste", productCount: 6 },
-    ],
-  },
-  {
-    id: "2",
-    name: "Skis",
-    slug: "skis",
-    description: "Skis alpins et de randonnee",
-    productCount: 18,
-    children: [
-      { id: "2-1", name: "Piste", slug: "piste", description: "Ski de piste", productCount: 10 },
-      { id: "2-2", name: "Randonnee", slug: "randonnee", description: "Ski de rando", productCount: 8 },
-    ],
-  },
-  { id: "3", name: "Fixations", slug: "fixations", description: "Fixations snowboard et ski", productCount: 15 },
-  { id: "4", name: "Boots", slug: "boots", description: "Chaussures et boots", productCount: 12 },
-  { id: "5", name: "Accessoires", slug: "accessoires", description: "Masques, casques, etc.", productCount: 30 },
-];
 
 interface CategoryItemProps {
   category: Category;
@@ -74,11 +46,8 @@ function CategoryItem({ category, level = 0, onEdit, onDelete }: CategoryItemPro
         <FolderTree size={16} className="text-vert-neon/60" />
         <div className="flex-1">
           <p className="text-sm font-medium text-blanc-casse">{category.name}</p>
-          <p className="text-xs text-blanc-casse/40">{category.description}</p>
+          <p className="text-xs text-blanc-casse/40">{category.description || "-"}</p>
         </div>
-        <span className="rounded-full bg-gris-anthracite-light px-2 py-0.5 text-xs text-blanc-casse/60">
-          {category.productCount} produits
-        </span>
         <div className="flex items-center gap-1">
           <button
             onClick={() => onEdit(category)}
@@ -111,34 +80,128 @@ function CategoryItem({ category, level = 0, onEdit, onDelete }: CategoryItemPro
   );
 }
 
+function buildTree(categories: Category[]): Category[] {
+  const map = new Map<string, Category>();
+  const roots: Category[] = [];
+
+  categories.forEach((cat) => {
+    map.set(cat.id, { ...cat, children: [] });
+  });
+
+  categories.forEach((cat) => {
+    const node = map.get(cat.id)!;
+    if (cat.parent_id && map.has(cat.parent_id)) {
+      map.get(cat.parent_id)!.children!.push(node);
+    } else {
+      roots.push(node);
+    }
+  });
+
+  return roots;
+}
+
 export default function CategoriesPage() {
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [formData, setFormData] = useState({ name: "", slug: "", description: "", parentId: "" });
+  const [submitting, setSubmitting] = useState(false);
+
+  const fetchCategories = async () => {
+    try {
+      const res = await fetch("/api/admin/categories");
+      const data = await res.json();
+      if (data.categories) {
+        setCategories(data.categories);
+      }
+    } catch (err) {
+      console.error("Failed to fetch categories:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  const tree = buildTree(categories);
 
   const handleEdit = (category: Category) => {
     setEditingCategory(category);
     setFormData({
       name: category.name,
       slug: category.slug,
-      description: category.description,
-      parentId: "",
+      description: category.description || "",
+      parentId: category.parent_id || "",
     });
     setShowForm(true);
   };
 
-  const handleDelete = (id: string) => {
-    // TODO: Delete category via API
-    console.log("Delete category:", id);
+  const handleDelete = async (id: string) => {
+    try {
+      await fetch(`/api/admin/categories?id=${id}`, { method: "DELETE" });
+      await fetchCategories();
+    } catch (err) {
+      console.error("Delete error:", err);
+    }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Save category via API
-    setShowForm(false);
-    setEditingCategory(null);
-    setFormData({ name: "", slug: "", description: "", parentId: "" });
+    setSubmitting(true);
+    try {
+      if (editingCategory) {
+        await fetch("/api/admin/categories", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id: editingCategory.id,
+            name: formData.name,
+            slug: formData.slug,
+            description: formData.description || null,
+            parent_id: formData.parentId || null,
+            sort_order: editingCategory.sort_order,
+          }),
+        });
+      } else {
+        await fetch("/api/admin/categories", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: formData.name,
+            slug: formData.slug,
+            description: formData.description || null,
+            parent_id: formData.parentId || null,
+            sort_order: 0,
+          }),
+        });
+      }
+      setShowForm(false);
+      setEditingCategory(null);
+      setFormData({ name: "", slug: "", description: "", parentId: "" });
+      await fetchCategories();
+    } catch (err) {
+      console.error("Submit error:", err);
+    } finally {
+      setSubmitting(false);
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold text-blanc-casse">Categories</h1>
+          <p className="text-sm text-blanc-casse/60">Organisez votre catalogue par categories</p>
+        </div>
+        <div className="flex items-center justify-center py-12">
+          <Loader2 size={24} className="animate-spin text-vert-neon" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -194,7 +257,24 @@ export default function CategoriesPage() {
                 className="w-full rounded-xl border border-white/10 bg-gris-anthracite px-4 py-2.5 text-sm font-mono text-blanc-casse placeholder:text-blanc-casse/40 focus:border-vert-neon/50 focus:outline-none focus:ring-1 focus:ring-vert-neon/30"
               />
             </div>
-            <div className="sm:col-span-2">
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-blanc-casse/80">Categorie parent</label>
+              <select
+                value={formData.parentId}
+                onChange={(e) => setFormData((prev) => ({ ...prev, parentId: e.target.value }))}
+                className="w-full rounded-xl border border-white/10 bg-gris-anthracite px-4 py-2.5 text-sm text-blanc-casse focus:border-vert-neon/50 focus:outline-none focus:ring-1 focus:ring-vert-neon/30"
+              >
+                <option value="">Aucune (racine)</option>
+                {categories
+                  .filter((c) => c.id !== editingCategory?.id)
+                  .map((cat) => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </option>
+                  ))}
+              </select>
+            </div>
+            <div>
               <label className="mb-1.5 block text-sm font-medium text-blanc-casse/80">Description</label>
               <input
                 type="text"
@@ -207,9 +287,10 @@ export default function CategoriesPage() {
             <div className="flex gap-3 sm:col-span-2">
               <button
                 type="submit"
-                className="rounded-xl bg-vert-neon px-4 py-2.5 text-sm font-semibold text-noir-mat transition-colors hover:bg-vert-neon-dark"
+                disabled={submitting}
+                className="rounded-xl bg-vert-neon px-4 py-2.5 text-sm font-semibold text-noir-mat transition-colors hover:bg-vert-neon-dark disabled:opacity-50"
               >
-                {editingCategory ? "Mettre a jour" : "Creer"}
+                {submitting ? "..." : editingCategory ? "Mettre a jour" : "Creer"}
               </button>
               <button
                 type="button"
@@ -228,16 +309,23 @@ export default function CategoriesPage() {
 
       {/* Categories List */}
       <div className="rounded-2xl border border-white/5 bg-noir-mat/50 p-2">
-        <div className="divide-y divide-white/5">
-          {mockCategories.map((category) => (
-            <CategoryItem
-              key={category.id}
-              category={category}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-            />
-          ))}
-        </div>
+        {tree.length === 0 ? (
+          <div className="py-12 text-center">
+            <FolderTree size={32} className="mx-auto mb-3 text-blanc-casse/20" />
+            <p className="text-sm text-blanc-casse/40">Aucune categorie pour le moment.</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-white/5">
+            {tree.map((category) => (
+              <CategoryItem
+                key={category.id}
+                category={category}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

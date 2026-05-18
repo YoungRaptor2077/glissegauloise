@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Upload, X } from "lucide-react";
 import Link from "next/link";
@@ -32,6 +32,27 @@ export default function NouveauProduitPage() {
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const supabase = createClient();
+      const fileName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+      const { error } = await supabase.storage.from('products').upload(fileName, file);
+      if (error) throw error;
+      const { data: urlData } = supabase.storage.from('products').getPublicUrl(fileName);
+      setFormData(prev => ({ ...prev, images: [...prev.images, urlData.publicUrl] }));
+    } catch (err) {
+      console.error('Upload error:', err);
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
 
   useEffect(() => {
     async function fetchCategories() {
@@ -187,6 +208,7 @@ export default function NouveauProduitPage() {
                   key={i}
                   className="relative h-24 w-24 overflow-hidden rounded-xl border border-white/10 bg-gris-anthracite"
                 >
+                  <img src={img} alt={`Product ${i + 1}`} className="h-full w-full object-cover" />
                   <button
                     type="button"
                     onClick={() =>
@@ -201,12 +223,27 @@ export default function NouveauProduitPage() {
                   </button>
                 </div>
               ))}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                onChange={handleImageUpload}
+                className="hidden"
+              />
               <button
                 type="button"
-                className="flex h-24 w-24 flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-white/20 text-blanc-casse/40 transition-colors hover:border-vert-neon/40 hover:text-vert-neon"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                className="flex h-24 w-24 flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-white/20 text-blanc-casse/40 transition-colors hover:border-vert-neon/40 hover:text-vert-neon disabled:opacity-50"
               >
-                <Upload size={20} />
-                <span className="text-[10px]">Ajouter</span>
+                {uploading ? (
+                  <div className="h-5 w-5 border-2 border-vert-neon border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <>
+                    <Upload size={20} />
+                    <span className="text-[10px]">Ajouter</span>
+                  </>
+                )}
               </button>
             </div>
           </div>
