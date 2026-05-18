@@ -62,7 +62,8 @@ export async function updateSession(request: NextRequest) {
       .eq("id", user.id)
       .single();
 
-    if (!profile || profile.role !== "admin") {
+    const role = profile?.role as string | undefined;
+    if (!role || !["admin", "super_admin"].includes(role)) {
       if (request.nextUrl.pathname.startsWith("/api/admin")) {
         return NextResponse.json(
           { error: "Acces interdit" },
