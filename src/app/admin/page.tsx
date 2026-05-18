@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { StatCard } from "@/components/admin/StatCard";
 import {
   Euro,
@@ -11,30 +12,168 @@ import {
   FileText,
 } from "lucide-react";
 import Link from "next/link";
+import { createClient } from "@/lib/supabase/client";
+import type { Order, Repair, Profile } from "@/types/database";
 
-const recentOrders = [
-  { id: "CMD-001", client: "Jean Dupont", total: "149.90", status: "En cours", date: "2024-01-15" },
-  { id: "CMD-002", client: "Marie Martin", total: "89.00", status: "Expediee", date: "2024-01-14" },
-  { id: "CMD-003", client: "Pierre Durand", total: "299.99", status: "Livree", date: "2024-01-13" },
-  { id: "CMD-004", client: "Sophie Bernard", total: "59.90", status: "En attente", date: "2024-01-12" },
-];
+interface RecentOrder {
+  id: string;
+  client: string;
+  total: number;
+  status: string;
+  date: string;
+}
 
-const recentRepairs = [
-  { id: "REP-001", client: "Lucas Moreau", board: "Snowboard Burton", status: "Diagnostic", date: "2024-01-15" },
-  { id: "REP-002", client: "Emma Petit", board: "Ski Rossignol", status: "En cours", date: "2024-01-14" },
-  { id: "REP-003", client: "Hugo Leroy", board: "Snowboard Lib Tech", status: "Termine", date: "2024-01-13" },
-];
+interface RecentRepair {
+  id: string;
+  client: string;
+  board: string;
+  status: string;
+  date: string;
+}
+
+const orderStatusLabels: Record<string, string> = {
+  pending: "En attente",
+  confirmed: "Confirmee",
+  shipped: "Expediee",
+  delivered: "Livree",
+  cancelled: "Annulee",
+};
+
+const repairStatusLabels: Record<string, string> = {
+  pending: "En attente",
+  diagnosed: "Diagnostic",
+  in_progress: "En cours",
+  completed: "Termine",
+  cancelled: "Annule",
+};
 
 const statusColors: Record<string, string> = {
-  "En cours": "bg-blue-500/10 text-blue-400",
+  "En attente": "bg-yellow-500/10 text-yellow-400",
+  "Confirmee": "bg-blue-500/10 text-blue-400",
   "Expediee": "bg-purple-500/10 text-purple-400",
   "Livree": "bg-green-500/10 text-green-400",
-  "En attente": "bg-yellow-500/10 text-yellow-400",
+  "Annulee": "bg-red-500/10 text-red-400",
   "Diagnostic": "bg-orange-500/10 text-orange-400",
+  "En cours": "bg-blue-500/10 text-blue-400",
   "Termine": "bg-green-500/10 text-green-400",
+  "Annule": "bg-red-500/10 text-red-400",
 };
 
 export default function AdminDashboard() {
+  const [loading, setLoading] = useState(true);
+  const [revenue, setRevenue] = useState(0);
+  const [orderCount, setOrderCount] = useState(0);
+  const [repairCount, setRepairCount] = useState(0);
+  const [clientCount, setClientCount] = useState(0);
+  const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([]);
+  const [recentRepairs, setRecentRepairs] = useState<RecentRepair[]>([]);
+
+  useEffect(() => {
+    async function fetchDashboardData() {
+      const supabase = createClient();
+      const now = new Date();
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+
+      try {
+        // Fetch orders this month (not cancelled) for count and revenue
+        const { data: monthOrders } = await supabase
+          .from("orders")
+          .select("*")
+          .gte("created_at", startOfMonth)
+          .neq("status", "cancelled") as { data: Order[] | null };
+
+        if (monthOrders) {
+          setOrderCount(monthOrders.length);
+          setRevenue(monthOrders.reduce((sum, o) => sum + (o.total || 0), 0));
+        }
+
+        // Active repairs count
+        const { count: activeRepairs } = await supabase
+          .from("repairs")
+          .select("*", { count: "exact", head: true })
+          .in("status", ["pending", "diagnosed", "in_progress"]);
+
+        setRepairCount(activeRepairs || 0);
+
+        // New clients this month
+        const { count: newClients } = await supabase
+          .from("profiles")
+          .select("*", { count: "exact", head: true })
+          .gte("created_at", startOfMonth);
+
+        setClientCount(newClients || 0);
+
+        // 4 most recent orders with profile name
+        const { data: orders } = await supabase
+          .from("orders")
+          .select("*")
+          .order("created_at", { ascending: false })
+          .limit(4) as { data: Order[] | null };
+
+        if (orders) {
+          const orderUserIds = [...new Set(orders.map((o) => o.user_id).filter(Boolean))] as string[];
+          const orderProfileMap: Record<string, Profile> = {};
+          if (orderUserIds.length > 0) {
+            const { data: profiles } = await supabase
+              .from("profiles")
+              .select("*")
+              .in("id", orderUserIds) as { data: Profile[] | null };
+            if (profiles) {
+              profiles.forEach((p) => { orderProfileMap[p.id] = p; });
+            }
+          }
+
+          setRecentOrders(
+            orders.map((o) => ({
+              id: o.id.substring(0, 8).toUpperCase(),
+              client: (o.user_id && orderProfileMap[o.user_id]?.full_name) || "Client",
+              total: o.total,
+              status: orderStatusLabels[o.status] || o.status,
+              date: new Date(o.created_at).toLocaleDateString("fr-FR"),
+            }))
+          );
+        }
+
+        // 3 most recent repairs with profile name
+        const { data: repairs } = await supabase
+          .from("repairs")
+          .select("*")
+          .order("created_at", { ascending: false })
+          .limit(3) as { data: Repair[] | null };
+
+        if (repairs) {
+          const repairUserIds = [...new Set(repairs.map((r) => r.user_id).filter(Boolean))] as string[];
+          const repairProfileMap: Record<string, Profile> = {};
+          if (repairUserIds.length > 0) {
+            const { data: profiles } = await supabase
+              .from("profiles")
+              .select("*")
+              .in("id", repairUserIds) as { data: Profile[] | null };
+            if (profiles) {
+              profiles.forEach((p) => { repairProfileMap[p.id] = p; });
+            }
+          }
+
+          setRecentRepairs(
+            repairs.map((r) => ({
+              id: r.id.substring(0, 8).toUpperCase(),
+              client: (r.user_id && repairProfileMap[r.user_id]?.full_name) || "Client",
+              board: `${r.brand || ""} ${r.board_type}`.trim(),
+              status: repairStatusLabels[r.status] || r.status,
+              date: new Date(r.created_at).toLocaleDateString("fr-FR"),
+            }))
+          );
+        }
+      } catch (error) {
+        console.error("Error fetching dashboard data:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchDashboardData();
+  }, []);
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -49,26 +188,22 @@ export default function AdminDashboard() {
         <StatCard
           icon={<Euro size={24} />}
           label="Chiffre d'affaires du mois"
-          value="12 450 EUR"
-          trend={{ value: 12, isPositive: true }}
+          value={loading ? "..." : `${revenue.toLocaleString("fr-FR")} EUR`}
         />
         <StatCard
           icon={<ShoppingCart size={24} />}
-          label="Commandes en cours"
-          value="23"
-          trend={{ value: 8, isPositive: true }}
+          label="Commandes ce mois"
+          value={loading ? "..." : String(orderCount)}
         />
         <StatCard
           icon={<Wrench size={24} />}
           label="Reparations en cours"
-          value="7"
-          trend={{ value: 3, isPositive: false }}
+          value={loading ? "..." : String(repairCount)}
         />
         <StatCard
           icon={<Users size={24} />}
           label="Nouveaux clients"
-          value="34"
-          trend={{ value: 15, isPositive: true }}
+          value={loading ? "..." : String(clientCount)}
         />
       </div>
 
@@ -117,30 +252,40 @@ export default function AdminDashboard() {
             </Link>
           </div>
           <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-white/5">
-                  <th className="pb-2 text-left text-xs font-medium text-blanc-casse/50">ID</th>
-                  <th className="pb-2 text-left text-xs font-medium text-blanc-casse/50">Client</th>
-                  <th className="pb-2 text-left text-xs font-medium text-blanc-casse/50">Total</th>
-                  <th className="pb-2 text-left text-xs font-medium text-blanc-casse/50">Statut</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/5">
-                {recentOrders.map((order) => (
-                  <tr key={order.id}>
-                    <td className="py-2.5 text-sm font-mono text-blanc-casse/80">{order.id}</td>
-                    <td className="py-2.5 text-sm text-blanc-casse/80">{order.client}</td>
-                    <td className="py-2.5 text-sm text-blanc-casse/80">{order.total} EUR</td>
-                    <td className="py-2.5">
-                      <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusColors[order.status] || ""}`}>
-                        {order.status}
-                      </span>
-                    </td>
-                  </tr>
+            {loading ? (
+              <div className="space-y-3">
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="h-8 animate-pulse rounded bg-gris-anthracite" />
                 ))}
-              </tbody>
-            </table>
+              </div>
+            ) : recentOrders.length === 0 ? (
+              <p className="text-sm text-blanc-casse/40 py-4 text-center">Aucune commande</p>
+            ) : (
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-white/5">
+                    <th className="pb-2 text-left text-xs font-medium text-blanc-casse/50">ID</th>
+                    <th className="pb-2 text-left text-xs font-medium text-blanc-casse/50">Client</th>
+                    <th className="pb-2 text-left text-xs font-medium text-blanc-casse/50">Total</th>
+                    <th className="pb-2 text-left text-xs font-medium text-blanc-casse/50">Statut</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5">
+                  {recentOrders.map((order) => (
+                    <tr key={order.id}>
+                      <td className="py-2.5 text-sm font-mono text-blanc-casse/80">{order.id}</td>
+                      <td className="py-2.5 text-sm text-blanc-casse/80">{order.client}</td>
+                      <td className="py-2.5 text-sm text-blanc-casse/80">{order.total.toFixed(2)} EUR</td>
+                      <td className="py-2.5">
+                        <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusColors[order.status] || ""}`}>
+                          {order.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
         </div>
 
@@ -156,30 +301,40 @@ export default function AdminDashboard() {
             </Link>
           </div>
           <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-white/5">
-                  <th className="pb-2 text-left text-xs font-medium text-blanc-casse/50">ID</th>
-                  <th className="pb-2 text-left text-xs font-medium text-blanc-casse/50">Client</th>
-                  <th className="pb-2 text-left text-xs font-medium text-blanc-casse/50">Board</th>
-                  <th className="pb-2 text-left text-xs font-medium text-blanc-casse/50">Statut</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/5">
-                {recentRepairs.map((repair) => (
-                  <tr key={repair.id}>
-                    <td className="py-2.5 text-sm font-mono text-blanc-casse/80">{repair.id}</td>
-                    <td className="py-2.5 text-sm text-blanc-casse/80">{repair.client}</td>
-                    <td className="py-2.5 text-sm text-blanc-casse/80">{repair.board}</td>
-                    <td className="py-2.5">
-                      <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusColors[repair.status] || ""}`}>
-                        {repair.status}
-                      </span>
-                    </td>
-                  </tr>
+            {loading ? (
+              <div className="space-y-3">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="h-8 animate-pulse rounded bg-gris-anthracite" />
                 ))}
-              </tbody>
-            </table>
+              </div>
+            ) : recentRepairs.length === 0 ? (
+              <p className="text-sm text-blanc-casse/40 py-4 text-center">Aucune reparation</p>
+            ) : (
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-white/5">
+                    <th className="pb-2 text-left text-xs font-medium text-blanc-casse/50">ID</th>
+                    <th className="pb-2 text-left text-xs font-medium text-blanc-casse/50">Client</th>
+                    <th className="pb-2 text-left text-xs font-medium text-blanc-casse/50">Board</th>
+                    <th className="pb-2 text-left text-xs font-medium text-blanc-casse/50">Statut</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5">
+                  {recentRepairs.map((repair) => (
+                    <tr key={repair.id}>
+                      <td className="py-2.5 text-sm font-mono text-blanc-casse/80">{repair.id}</td>
+                      <td className="py-2.5 text-sm text-blanc-casse/80">{repair.client}</td>
+                      <td className="py-2.5 text-sm text-blanc-casse/80">{repair.board}</td>
+                      <td className="py-2.5">
+                        <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusColors[repair.status] || ""}`}>
+                          {repair.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
         </div>
       </div>

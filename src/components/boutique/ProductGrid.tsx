@@ -3,10 +3,10 @@
 import { motion } from "framer-motion";
 import { PackageSearch } from "lucide-react";
 import { ProductCard } from "./ProductCard";
-import type { ProductData } from "@/lib/data/products";
+import type { ProductDisplay } from "@/lib/data/product-adapter";
 
 interface ProductGridProps {
-  products: ProductData[];
+  products: ProductDisplay[];
 }
 
 export function ProductGrid({ products }: ProductGridProps) {

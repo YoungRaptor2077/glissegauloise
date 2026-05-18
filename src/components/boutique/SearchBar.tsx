@@ -3,15 +3,15 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { categories } from "@/lib/data/products";
 
 interface SearchBarProps {
   value: string;
   onChange: (value: string) => void;
+  categories?: { name: string; slug: string }[];
   className?: string;
 }
 
-export function SearchBar({ value, onChange, className }: SearchBarProps) {
+export function SearchBar({ value, onChange, categories = [], className }: SearchBarProps) {
   const [localValue, setLocalValue] = useState(value);
   const [isFocused, setIsFocused] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -65,7 +65,7 @@ export function SearchBar({ value, onChange, className }: SearchBarProps) {
           </button>
         )}
       </div>
-      {isFocused && !localValue && (
+      {isFocused && !localValue && categories.length > 0 && (
         <div className="absolute top-full left-0 right-0 mt-2 p-4 rounded-xl glass-strong z-10">
           <p className="text-xs font-medium text-blanc-casse/50 uppercase tracking-wider mb-2">
             Categories

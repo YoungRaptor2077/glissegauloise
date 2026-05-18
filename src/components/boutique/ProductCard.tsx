@@ -6,10 +6,10 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/Badge";
 import { useCart } from "@/lib/hooks/useCart";
-import type { ProductData } from "@/lib/data/products";
+import type { ProductDisplay } from "@/lib/data/product-adapter";
 
 interface ProductCardProps {
-  product: ProductData;
+  product: ProductDisplay;
   index?: number;
 }
 

@@ -1,15 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Plus } from "lucide-react";
 import { DataTable, type Column } from "@/components/admin/DataTable";
 import { cn } from "@/lib/utils";
+import { createClient } from "@/lib/supabase/client";
+import type { Quote, Profile } from "@/types/database";
 
 type QuoteStatus = "all" | "draft" | "sent" | "accepted" | "rejected" | "expired";
 
 interface QuoteRow {
   id: string;
+  rawId: string;
   client: string;
   repairId: string | null;
   status: string;
@@ -18,14 +21,6 @@ interface QuoteRow {
   createdAt: string;
   [key: string]: unknown;
 }
-
-const mockQuotes: QuoteRow[] = [
-  { id: "DEV-001", client: "Lucas Moreau", repairId: "REP-001", status: "sent", total: 120.00, validUntil: "2024-02-15", createdAt: "2024-01-15" },
-  { id: "DEV-002", client: "Emma Petit", repairId: "REP-002", status: "accepted", total: 85.00, validUntil: "2024-02-14", createdAt: "2024-01-14" },
-  { id: "DEV-003", client: "Thomas Garnier", repairId: "REP-005", status: "draft", total: 180.00, validUntil: "2024-02-11", createdAt: "2024-01-11" },
-  { id: "DEV-004", client: "Lea Roux", repairId: null, status: "rejected", total: 250.00, validUntil: "2024-01-30", createdAt: "2024-01-05" },
-  { id: "DEV-005", client: "Jean Dupont", repairId: null, status: "expired", total: 95.00, validUntil: "2024-01-10", createdAt: "2023-12-20" },
-];
 
 const statusLabels: Record<string, string> = {
   draft: "Brouillon",
@@ -54,10 +49,74 @@ const tabs: { key: QuoteStatus; label: string }[] = [
 
 export default function DevisPage() {
   const [activeTab, setActiveTab] = useState<QuoteStatus>("all");
+  const [quotes, setQuotes] = useState<QuoteRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchQuotes() {
+      const supabase = createClient();
+      const { data } = await supabase
+        .from("quotes")
+        .select("*")
+        .order("created_at", { ascending: false }) as { data: Quote[] | null };
+
+      if (data) {
+        const userIds = [...new Set(data.map((q) => q.user_id).filter(Boolean))] as string[];
+        const profileMap: Record<string, Profile> = {};
+
+        if (userIds.length > 0) {
+          const { data: profiles } = await supabase
+            .from("profiles")
+            .select("*")
+            .in("id", userIds) as { data: Profile[] | null };
+          if (profiles) {
+            profiles.forEach((p) => { profileMap[p.id] = p; });
+          }
+        }
+
+        setQuotes(
+          data.map((q) => {
+            const profile = q.user_id ? profileMap[q.user_id] : null;
+            return {
+              id: q.id.substring(0, 8).toUpperCase(),
+              rawId: q.id,
+              client: profile?.full_name || "Client",
+              repairId: q.repair_id ? q.repair_id.substring(0, 8).toUpperCase() : null,
+              status: q.status,
+              total: q.total,
+              validUntil: new Date(q.valid_until).toLocaleDateString("fr-FR"),
+              createdAt: new Date(q.created_at).toLocaleDateString("fr-FR"),
+            };
+          })
+        );
+      }
+      setLoading(false);
+    }
+
+    fetchQuotes();
+  }, []);
+
+  const handleStatusUpdate = async (quoteId: string, newStatus: string) => {
+    setError(null);
+    const supabase = createClient();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase.from("quotes") as any)
+      .update({ status: newStatus })
+      .eq("id", quoteId);
+
+    if (!error) {
+      setQuotes((prev) =>
+        prev.map((q) => (q.rawId === quoteId ? { ...q, status: newStatus } : q))
+      );
+    } else {
+      setError("Erreur lors de la mise a jour du statut du devis.");
+    }
+  };
 
   const filteredQuotes = activeTab === "all"
-    ? mockQuotes
-    : mockQuotes.filter((q) => q.status === activeTab);
+    ? quotes
+    : quotes.filter((q) => q.status === activeTab);
 
   const columns: Column<QuoteRow>[] = [
     { key: "id", label: "Devis", sortable: true },
@@ -85,6 +144,24 @@ export default function DevisPage() {
     { key: "validUntil", label: "Valide jusqu'au", sortable: true },
     { key: "createdAt", label: "Cree le", sortable: true },
   ];
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-blanc-casse">Devis</h1>
+            <p className="text-sm text-blanc-casse/60">Creez et gerez les devis clients</p>
+          </div>
+        </div>
+        <div className="space-y-3">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="h-12 animate-pulse rounded-xl bg-gris-anthracite" />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -120,6 +197,12 @@ export default function DevisPage() {
         ))}
       </div>
 
+      {error && (
+        <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+          {error}
+        </div>
+      )}
+
       <DataTable
         columns={columns}
         data={filteredQuotes}
@@ -130,13 +213,34 @@ export default function DevisPage() {
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  // TODO: Send quote via API
-                  console.log("Send quote:", row.id);
+                  handleStatusUpdate(row.rawId, "sent");
                 }}
                 className="rounded-lg bg-vert-neon/10 px-2 py-1 text-xs font-medium text-vert-neon hover:bg-vert-neon/20"
               >
                 Envoyer
               </button>
+            )}
+            {row.status === "sent" && (
+              <>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleStatusUpdate(row.rawId, "accepted");
+                  }}
+                  className="rounded-lg bg-green-500/10 px-2 py-1 text-xs font-medium text-green-400 hover:bg-green-500/20"
+                >
+                  Accepter
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleStatusUpdate(row.rawId, "rejected");
+                  }}
+                  className="rounded-lg bg-red-500/10 px-2 py-1 text-xs font-medium text-red-400 hover:bg-red-500/20"
+                >
+                  Refuser
+                </button>
+              </>
             )}
           </div>
         )}

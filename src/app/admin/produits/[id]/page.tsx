@@ -1,46 +1,82 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { ArrowLeft, Upload, X } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { createClient } from "@/lib/supabase/client";
+import type { Product, Category } from "@/types/database";
 
-// Mock data for editing
-const mockProduct = {
-  name: "Burton Custom 158",
-  slug: "burton-custom-158",
-  description: "Le snowboard polyvalent par excellence. Ideal pour le all-mountain et le freestyle.",
-  price: "549.99",
-  compareAtPrice: "649.99",
-  stock: "12",
-  categoryId: "snowboards",
-  brand: "Burton",
-  compatibility: ["all-mountain", "freestyle"],
-  images: ["/placeholder-1.jpg", "/placeholder-2.jpg"],
-  isFeatured: true,
-  isActive: true,
-};
+interface CategoryOption {
+  id: string;
+  name: string;
+}
 
 export default function EditProduitPage() {
   const router = useRouter();
   const params = useParams();
-  const productId = params.id;
+  const productId = params.id as string;
 
+  const [loading, setLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [categories, setCategories] = useState<CategoryOption[]>([]);
   const [formData, setFormData] = useState({
-    name: mockProduct.name,
-    slug: mockProduct.slug,
-    description: mockProduct.description,
-    price: mockProduct.price,
-    compareAtPrice: mockProduct.compareAtPrice,
-    stock: mockProduct.stock,
-    categoryId: mockProduct.categoryId,
-    brand: mockProduct.brand,
-    compatibility: mockProduct.compatibility,
-    images: mockProduct.images,
-    isFeatured: mockProduct.isFeatured,
-    isActive: mockProduct.isActive,
+    name: "",
+    slug: "",
+    description: "",
+    price: "",
+    compareAtPrice: "",
+    stock: "",
+    categoryId: "",
+    brand: "",
+    images: [] as string[],
+    isFeatured: false,
+    isActive: true,
   });
+
+  useEffect(() => {
+    async function fetchData() {
+      const supabase = createClient();
+
+      // Fetch product
+      const { data: product } = await supabase
+        .from("products")
+        .select("*")
+        .eq("id", productId)
+        .single() as { data: Product | null };
+
+      if (product) {
+        setFormData({
+          name: product.name,
+          slug: product.slug,
+          description: product.description || "",
+          price: String(product.price),
+          compareAtPrice: product.compare_at_price ? String(product.compare_at_price) : "",
+          stock: String(product.stock_quantity),
+          categoryId: product.category_id || "",
+          brand: product.brand || "",
+          images: product.images || [],
+          isFeatured: product.is_featured,
+          isActive: product.is_active,
+        });
+      }
+
+      // Fetch categories
+      const { data: cats } = await supabase
+        .from("categories")
+        .select("*")
+        .order("sort_order", { ascending: true }) as { data: Category[] | null };
+
+      if (cats) {
+        setCategories(cats);
+      }
+
+      setLoading(false);
+    }
+
+    fetchData();
+  }, [productId]);
 
   const generateSlug = (name: string) => {
     return name
@@ -57,11 +93,48 @@ export default function EditProduitPage() {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Submit update to API
-    router.push("/admin/produits");
+    setIsSubmitting(true);
+    try {
+      const response = await fetch(`/api/admin/products/${productId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+      if (response.ok) {
+        router.push("/admin/produits");
+      }
+    } catch (error) {
+      console.error("Product update error:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-4">
+          <Link
+            href="/admin/produits"
+            className="rounded-lg p-2 text-blanc-casse/60 transition-colors hover:bg-gris-anthracite hover:text-blanc-casse"
+          >
+            <ArrowLeft size={20} />
+          </Link>
+          <div>
+            <h1 className="text-2xl font-bold text-blanc-casse">Modifier le produit</h1>
+            <p className="text-sm text-blanc-casse/60">Chargement...</p>
+          </div>
+        </div>
+        <div className="space-y-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-32 animate-pulse rounded-2xl bg-gris-anthracite" />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -119,6 +192,18 @@ export default function EditProduitPage() {
                   placeholder="Decrivez le produit..."
                   rows={5}
                   className="w-full rounded-xl border border-white/10 bg-gris-anthracite px-4 py-2.5 text-sm text-blanc-casse placeholder:text-blanc-casse/40 focus:border-vert-neon/50 focus:outline-none focus:ring-1 focus:ring-vert-neon/30 resize-none"
+                />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-blanc-casse/80">
+                  Marque
+                </label>
+                <input
+                  type="text"
+                  value={formData.brand}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, brand: e.target.value }))}
+                  placeholder="Ex: Xiaomi, Segway, Ninebot"
+                  className="w-full rounded-xl border border-white/10 bg-gris-anthracite px-4 py-2.5 text-sm text-blanc-casse placeholder:text-blanc-casse/40 focus:border-vert-neon/50 focus:outline-none focus:ring-1 focus:ring-vert-neon/30"
                 />
               </div>
             </div>
@@ -235,24 +320,12 @@ export default function EditProduitPage() {
                   className="w-full rounded-xl border border-white/10 bg-gris-anthracite px-4 py-2.5 text-sm text-blanc-casse focus:border-vert-neon/50 focus:outline-none focus:ring-1 focus:ring-vert-neon/30"
                 >
                   <option value="">Selectionner...</option>
-                  <option value="snowboards">Snowboards</option>
-                  <option value="skis">Skis</option>
-                  <option value="fixations">Fixations</option>
-                  <option value="boots">Boots</option>
-                  <option value="accessoires">Accessoires</option>
+                  {categories.map((cat) => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </option>
+                  ))}
                 </select>
-              </div>
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-blanc-casse/80">
-                  Marque
-                </label>
-                <input
-                  type="text"
-                  value={formData.brand}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, brand: e.target.value }))}
-                  placeholder="Ex: Burton, Rossignol..."
-                  className="w-full rounded-xl border border-white/10 bg-gris-anthracite px-4 py-2.5 text-sm text-blanc-casse placeholder:text-blanc-casse/40 focus:border-vert-neon/50 focus:outline-none focus:ring-1 focus:ring-vert-neon/30"
-                />
               </div>
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-blanc-casse/80">
@@ -273,11 +346,12 @@ export default function EditProduitPage() {
           <div className="flex gap-3">
             <button
               type="submit"
+              disabled={isSubmitting}
               className={cn(
-                "flex-1 rounded-xl bg-vert-neon px-4 py-2.5 text-sm font-semibold text-noir-mat transition-colors hover:bg-vert-neon-dark"
+                "flex-1 rounded-xl bg-vert-neon px-4 py-2.5 text-sm font-semibold text-noir-mat transition-colors hover:bg-vert-neon-dark disabled:opacity-50"
               )}
             >
-              Mettre a jour
+              {isSubmitting ? "Enregistrement..." : "Mettre a jour"}
             </button>
             <Link
               href="/admin/produits"

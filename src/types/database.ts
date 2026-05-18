@@ -86,8 +86,10 @@ export interface Database {
           description: string | null;
           price: number;
           compare_at_price: number | null;
+          brand: string | null;
           category_id: string | null;
           images: string[];
+          compatibility: string[];
           specifications: Json | null;
           stock_quantity: number;
           is_active: boolean;
@@ -103,8 +105,10 @@ export interface Database {
           description?: string | null;
           price: number;
           compare_at_price?: number | null;
+          brand?: string | null;
           category_id?: string | null;
           images?: string[];
+          compatibility?: string[];
           specifications?: Json | null;
           stock_quantity?: number;
           is_active?: boolean;
@@ -120,8 +124,10 @@ export interface Database {
           description?: string | null;
           price?: number;
           compare_at_price?: number | null;
+          brand?: string | null;
           category_id?: string | null;
           images?: string[];
+          compatibility?: string[];
           specifications?: Json | null;
           stock_quantity?: number;
           is_active?: boolean;

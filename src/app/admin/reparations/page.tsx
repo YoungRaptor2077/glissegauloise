@@ -1,14 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { DataTable, type Column } from "@/components/admin/DataTable";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { createClient } from "@/lib/supabase/client";
+import type { Repair, Profile } from "@/types/database";
 
-type RepairStatus = "all" | "received" | "diagnostic" | "waiting_parts" | "repairing" | "testing" | "done" | "ready";
+type RepairStatus = "all" | "pending" | "diagnosed" | "in_progress" | "completed" | "cancelled";
 
 interface RepairRow {
   id: string;
+  rawId: string;
   client: string;
   board: string;
   brand: string;
@@ -16,58 +19,113 @@ interface RepairRow {
   date: string;
   estimatedCost: number | null;
   description: string;
+  diagnosis: string | null;
   [key: string]: unknown;
 }
 
-const mockRepairs: RepairRow[] = [
-  { id: "REP-001", client: "Lucas Moreau", board: "Snowboard", brand: "Burton", status: "diagnostic", date: "2024-01-15", estimatedCost: null, description: "Carre endommagee cote talon" },
-  { id: "REP-002", client: "Emma Petit", board: "Ski", brand: "Rossignol", status: "repairing", date: "2024-01-14", estimatedCost: 85, description: "Semelle rayee en profondeur" },
-  { id: "REP-003", client: "Hugo Leroy", board: "Snowboard", brand: "Lib Tech", status: "done", date: "2024-01-13", estimatedCost: 60, description: "Fartage et affutage complet" },
-  { id: "REP-004", client: "Lea Roux", board: "Ski", brand: "Atomic", status: "received", date: "2024-01-12", estimatedCost: null, description: "Fixation desserree" },
-  { id: "REP-005", client: "Thomas Garnier", board: "Snowboard", brand: "Capita", status: "waiting_parts", date: "2024-01-11", estimatedCost: 120, description: "Nose delaminate" },
-  { id: "REP-006", client: "Camille Dubois", board: "Ski", brand: "Salomon", status: "ready", date: "2024-01-10", estimatedCost: 45, description: "Reparation semelle + fartage" },
-];
-
 const statusLabels: Record<string, string> = {
-  received: "Demande recue",
-  diagnostic: "Diagnostic",
-  waiting_parts: "En attente piece",
-  repairing: "Reparation en cours",
-  testing: "Tests",
-  done: "Termine",
-  ready: "Pret a recuperer",
+  pending: "En attente",
+  diagnosed: "Diagnostic",
+  in_progress: "En cours",
+  completed: "Termine",
+  cancelled: "Annule",
 };
 
 const statusStyles: Record<string, string> = {
-  received: "bg-gray-500/10 text-gray-400",
-  diagnostic: "bg-orange-500/10 text-orange-400",
-  waiting_parts: "bg-yellow-500/10 text-yellow-400",
-  repairing: "bg-blue-500/10 text-blue-400",
-  testing: "bg-purple-500/10 text-purple-400",
-  done: "bg-green-500/10 text-green-400",
-  ready: "bg-emerald-500/10 text-emerald-400",
+  pending: "bg-yellow-500/10 text-yellow-400",
+  diagnosed: "bg-orange-500/10 text-orange-400",
+  in_progress: "bg-blue-500/10 text-blue-400",
+  completed: "bg-green-500/10 text-green-400",
+  cancelled: "bg-red-500/10 text-red-400",
 };
 
-const statusOrder = ["received", "diagnostic", "waiting_parts", "repairing", "testing", "done", "ready"];
+const statusOrder = ["pending", "diagnosed", "in_progress", "completed", "cancelled"];
 
 const tabs: { key: RepairStatus; label: string }[] = [
   { key: "all", label: "Toutes" },
-  { key: "received", label: "Recues" },
-  { key: "diagnostic", label: "Diagnostic" },
-  { key: "waiting_parts", label: "En attente" },
-  { key: "repairing", label: "En cours" },
-  { key: "testing", label: "Tests" },
-  { key: "done", label: "Terminees" },
-  { key: "ready", label: "Pretes" },
+  { key: "pending", label: "En attente" },
+  { key: "diagnosed", label: "Diagnostic" },
+  { key: "in_progress", label: "En cours" },
+  { key: "completed", label: "Terminees" },
+  { key: "cancelled", label: "Annulees" },
 ];
 
 export default function ReparationsPage() {
   const [activeTab, setActiveTab] = useState<RepairStatus>("all");
+  const [repairs, setRepairs] = useState<RepairRow[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedRepair, setSelectedRepair] = useState<RepairRow | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchRepairs() {
+      const supabase = createClient();
+      const { data } = await supabase
+        .from("repairs")
+        .select("*")
+        .order("created_at", { ascending: false }) as { data: Repair[] | null };
+
+      if (data) {
+        const userIds = [...new Set(data.map((r) => r.user_id).filter(Boolean))] as string[];
+        const profileMap: Record<string, Profile> = {};
+
+        if (userIds.length > 0) {
+          const { data: profiles } = await supabase
+            .from("profiles")
+            .select("*")
+            .in("id", userIds) as { data: Profile[] | null };
+          if (profiles) {
+            profiles.forEach((p) => { profileMap[p.id] = p; });
+          }
+        }
+
+        setRepairs(
+          data.map((r) => {
+            const profile = r.user_id ? profileMap[r.user_id] : null;
+            return {
+              id: r.id.substring(0, 8).toUpperCase(),
+              rawId: r.id,
+              client: profile?.full_name || "Client",
+              board: r.board_type,
+              brand: r.brand || "",
+              status: r.status,
+              date: new Date(r.created_at).toLocaleDateString("fr-FR"),
+              estimatedCost: r.estimated_cost,
+              description: r.description,
+              diagnosis: r.diagnosis,
+            };
+          })
+        );
+      }
+      setLoading(false);
+    }
+
+    fetchRepairs();
+  }, []);
+
+  const handleStatusChange = async (repairId: string, newStatus: string) => {
+    setError(null);
+    const supabase = createClient();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase.from("repairs") as any)
+      .update({ status: newStatus })
+      .eq("id", repairId);
+
+    if (!error) {
+      setRepairs((prev) =>
+        prev.map((r) => (r.rawId === repairId ? { ...r, status: newStatus } : r))
+      );
+      if (selectedRepair?.rawId === repairId) {
+        setSelectedRepair((prev) => prev ? { ...prev, status: newStatus } : null);
+      }
+    } else {
+      setError("Erreur lors de la mise a jour du statut de la reparation.");
+    }
+  };
 
   const filteredRepairs = activeTab === "all"
-    ? mockRepairs
-    : mockRepairs.filter((r) => r.status === activeTab);
+    ? repairs
+    : repairs.filter((r) => r.status === activeTab);
 
   const columns: Column<RepairRow>[] = [
     { key: "id", label: "ID", sortable: true },
@@ -92,6 +150,22 @@ export default function ReparationsPage() {
     },
     { key: "date", label: "Date", sortable: true },
   ];
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold text-blanc-casse">Reparations</h1>
+          <p className="text-sm text-blanc-casse/60">Suivez les reparations en cours</p>
+        </div>
+        <div className="space-y-3">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="h-12 animate-pulse rounded-xl bg-gris-anthracite" />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -118,6 +192,12 @@ export default function ReparationsPage() {
         ))}
       </div>
 
+      {error && (
+        <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+          {error}
+        </div>
+      )}
+
       <DataTable
         columns={columns}
         data={filteredRepairs}
@@ -127,8 +207,7 @@ export default function ReparationsPage() {
           <select
             value={row.status}
             onChange={(e) => {
-              // TODO: Update status via API
-              console.log("Update repair status:", row.id, e.target.value);
+              handleStatusChange(row.rawId, e.target.value);
             }}
             onClick={(e) => e.stopPropagation()}
             className="rounded-lg border border-white/10 bg-gris-anthracite px-2 py-1 text-xs text-blanc-casse focus:border-vert-neon/50 focus:outline-none"
@@ -151,7 +230,7 @@ export default function ReparationsPage() {
             </h2>
             <button
               onClick={() => setSelectedRepair(null)}
-              className="rounded-lg p-1.5 text-blanc-casse/60 hover:bg-gris-anthracite-light hover:text-blanc-casse"
+              className="rounded-lg p-1.5 text-blanc-casse/60 hover:bg-gris-anthracite hover:text-blanc-casse"
             >
               <X size={18} />
             </button>
@@ -172,6 +251,13 @@ export default function ReparationsPage() {
               <h3 className="text-sm font-medium text-blanc-casse/60 mb-2">Description</h3>
               <p className="text-sm text-blanc-casse">{selectedRepair.description}</p>
             </div>
+
+            {selectedRepair.diagnosis && (
+              <div className="rounded-xl border border-white/5 bg-noir-mat/50 p-4">
+                <h3 className="text-sm font-medium text-blanc-casse/60 mb-2">Diagnostic</h3>
+                <p className="text-sm text-blanc-casse">{selectedRepair.diagnosis}</p>
+              </div>
+            )}
 
             <div className="rounded-xl border border-white/5 bg-noir-mat/50 p-4">
               <h3 className="text-sm font-medium text-blanc-casse/60 mb-2">Statut actuel</h3>
@@ -218,18 +304,12 @@ export default function ReparationsPage() {
               </div>
             </div>
 
-            {/* Add Note */}
-            <div className="rounded-xl border border-white/5 bg-noir-mat/50 p-4">
-              <h3 className="text-sm font-medium text-blanc-casse/60 mb-2">Ajouter une note</h3>
-              <textarea
-                placeholder="Ajouter une note..."
-                rows={3}
-                className="w-full rounded-xl border border-white/10 bg-gris-anthracite px-4 py-2.5 text-sm text-blanc-casse placeholder:text-blanc-casse/40 focus:border-vert-neon/50 focus:outline-none focus:ring-1 focus:ring-vert-neon/30 resize-none"
-              />
-              <button className="mt-2 rounded-lg bg-vert-neon/10 px-3 py-1.5 text-xs font-medium text-vert-neon hover:bg-vert-neon/20">
-                Enregistrer la note
-              </button>
-            </div>
+            {selectedRepair.estimatedCost && (
+              <div className="rounded-xl border border-white/5 bg-noir-mat/50 p-4">
+                <h3 className="text-sm font-medium text-blanc-casse/60 mb-2">Cout estime</h3>
+                <p className="text-lg font-bold text-blanc-casse">{selectedRepair.estimatedCost} EUR</p>
+              </div>
+            )}
           </div>
         </div>
       )}

@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Plus, Edit, Trash2, MoreVertical } from "lucide-react";
 import { DataTable, type Column } from "@/components/admin/DataTable";
+import { createClient } from "@/lib/supabase/client";
+import type { Product, Category } from "@/types/database";
 
 interface ProductRow {
   id: string;
@@ -15,15 +17,6 @@ interface ProductRow {
   [key: string]: unknown;
 }
 
-const mockProducts: ProductRow[] = [
-  { id: "1", name: "Burton Custom 158", category: "Snowboards", price: 549.99, stock: 12, status: "Actif" },
-  { id: "2", name: "Rossignol Experience 88", category: "Skis", price: 699.00, stock: 5, status: "Actif" },
-  { id: "3", name: "Union Force Bindings", category: "Fixations", price: 249.99, stock: 23, status: "Actif" },
-  { id: "4", name: "Oakley Flight Deck", category: "Masques", price: 189.00, stock: 0, status: "Rupture" },
-  { id: "5", name: "Burton Step On", category: "Boots", price: 399.99, stock: 8, status: "Actif" },
-  { id: "6", name: "Lib Tech Skate Banana", category: "Snowboards", price: 499.00, stock: 3, status: "Actif" },
-];
-
 const statusStyles: Record<string, string> = {
   Actif: "bg-green-500/10 text-green-400",
   Rupture: "bg-red-500/10 text-red-400",
@@ -32,6 +25,70 @@ const statusStyles: Record<string, string> = {
 
 export default function ProduitsPage() {
   const [menuOpen, setMenuOpen] = useState<string | null>(null);
+  const [products, setProducts] = useState<ProductRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchProducts() {
+      const supabase = createClient();
+      const { data } = await supabase
+        .from("products")
+        .select("*")
+        .order("created_at", { ascending: false }) as { data: Product[] | null };
+
+      if (data) {
+        // Fetch categories
+        const categoryIds = [...new Set(data.map((p) => p.category_id).filter(Boolean))] as string[];
+        const categoryMap: Record<string, string> = {};
+
+        if (categoryIds.length > 0) {
+          const { data: cats } = await supabase
+            .from("categories")
+            .select("*")
+            .in("id", categoryIds) as { data: Category[] | null };
+          if (cats) {
+            cats.forEach((c) => { categoryMap[c.id] = c.name; });
+          }
+        }
+
+        setProducts(
+          data.map((p) => {
+            let status = "Actif";
+            if (p.stock_quantity === 0) status = "Rupture";
+            else if (!p.is_active) status = "Brouillon";
+            return {
+              id: p.id,
+              name: p.name,
+              category: (p.category_id && categoryMap[p.category_id]) || "-",
+              price: p.price,
+              stock: p.stock_quantity,
+              status,
+            };
+          })
+        );
+      }
+      setLoading(false);
+    }
+
+    fetchProducts();
+  }, []);
+
+  const handleDelete = async (productId: string) => {
+    setError(null);
+    const response = await fetch(`/api/admin/products/${productId}`, {
+      method: "DELETE",
+    });
+
+    if (response.ok) {
+      setProducts((prev) => prev.filter((p) => p.id !== productId));
+    } else {
+      setError("Erreur lors de la suppression du produit.");
+    }
+    setDeleteConfirm(null);
+    setMenuOpen(null);
+  };
 
   const columns: Column<ProductRow>[] = [
     { key: "name", label: "Produit", sortable: true },
@@ -63,6 +120,24 @@ export default function ProduitsPage() {
     },
   ];
 
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-blanc-casse">Produits</h1>
+            <p className="text-sm text-blanc-casse/60">Gerez votre catalogue de produits</p>
+          </div>
+        </div>
+        <div className="space-y-3">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="h-12 animate-pulse rounded-xl bg-gris-anthracite" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -79,9 +154,15 @@ export default function ProduitsPage() {
         </Link>
       </div>
 
+      {error && (
+        <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+          {error}
+        </div>
+      )}
+
       <DataTable
         columns={columns}
-        data={mockProducts}
+        data={products}
         searchPlaceholder="Rechercher un produit..."
         actions={(row) => (
           <div className="relative">
@@ -98,12 +179,18 @@ export default function ProduitsPage() {
               <div className="absolute right-0 top-full z-10 mt-1 w-36 rounded-xl border border-white/10 bg-gris-anthracite py-1 shadow-xl">
                 <Link
                   href={`/admin/produits/${row.id}`}
-                  className="flex items-center gap-2 px-3 py-2 text-sm text-blanc-casse/80 hover:bg-gris-anthracite-light"
+                  className="flex items-center gap-2 px-3 py-2 text-sm text-blanc-casse/80 hover:bg-noir-mat/50"
                 >
                   <Edit size={14} />
                   Modifier
                 </Link>
-                <button className="flex w-full items-center gap-2 px-3 py-2 text-sm text-red-400 hover:bg-gris-anthracite-light">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setDeleteConfirm(row.id);
+                  }}
+                  className="flex w-full items-center gap-2 px-3 py-2 text-sm text-red-400 hover:bg-noir-mat/50"
+                >
                   <Trash2 size={14} />
                   Supprimer
                 </button>
@@ -112,6 +199,35 @@ export default function ProduitsPage() {
           </div>
         )}
       />
+
+      {/* Delete confirmation dialog */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+          <div className="rounded-2xl border border-white/10 bg-gris-anthracite p-6 shadow-xl max-w-sm w-full mx-4">
+            <h3 className="text-lg font-semibold text-blanc-casse mb-2">Confirmer la suppression</h3>
+            <p className="text-sm text-blanc-casse/60 mb-6">
+              Etes-vous sur de vouloir supprimer ce produit ? Cette action est irreversible.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => {
+                  setDeleteConfirm(null);
+                  setMenuOpen(null);
+                }}
+                className="rounded-xl border border-white/10 px-4 py-2 text-sm font-medium text-blanc-casse/80 transition-colors hover:bg-noir-mat/50"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={() => handleDelete(deleteConfirm)}
+                className="rounded-xl bg-red-500/10 border border-red-500/20 px-4 py-2 text-sm font-medium text-red-400 transition-colors hover:bg-red-500/20"
+              >
+                Supprimer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
