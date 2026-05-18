@@ -43,6 +43,7 @@ export interface Database {
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: [];
       };
       categories: {
         Row: {
@@ -75,6 +76,7 @@ export interface Database {
           sort_order?: number;
           created_at?: string;
         };
+        Relationships: [];
       };
       products: {
         Row: {
@@ -128,6 +130,7 @@ export interface Database {
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: [];
       };
       orders: {
         Row: {
@@ -175,6 +178,7 @@ export interface Database {
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: [];
       };
       repairs: {
         Row: {
@@ -222,6 +226,7 @@ export interface Database {
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: [];
       };
       quotes: {
         Row: {
@@ -266,6 +271,7 @@ export interface Database {
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: [];
       };
       conversations: {
         Row: {
@@ -301,6 +307,7 @@ export interface Database {
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: [];
       };
       messages: {
         Row: {
@@ -330,6 +337,76 @@ export interface Database {
           is_read?: boolean;
           created_at?: string;
         };
+        Relationships: [];
+      };
+      contact_submissions: {
+        Row: {
+          id: string;
+          name: string;
+          email: string;
+          phone: string | null;
+          subject: string | null;
+          message: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          email: string;
+          phone?: string | null;
+          subject?: string | null;
+          message: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          email?: string;
+          phone?: string | null;
+          subject?: string | null;
+          message?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      repair_requests: {
+        Row: {
+          id: string;
+          brand: string;
+          model: string | null;
+          description: string;
+          urgency: string;
+          contact_preference: string;
+          phone: string | null;
+          email: string;
+          location: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          brand: string;
+          model?: string | null;
+          description: string;
+          urgency?: string;
+          contact_preference?: string;
+          phone?: string | null;
+          email: string;
+          location?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          brand?: string;
+          model?: string | null;
+          description?: string;
+          urgency?: string;
+          contact_preference?: string;
+          phone?: string | null;
+          email?: string;
+          location?: string | null;
+          created_at?: string;
+        };
+        Relationships: [];
       };
     };
     Views: Record<string, never>;

@@ -45,5 +45,21 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  // Admin role check: redirect non-admin users away from /admin routes
+  const isAdminRoute = request.nextUrl.pathname.startsWith("/admin");
+  if (isAdminRoute && user) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .single();
+
+    if (!profile || profile.role !== "admin") {
+      const url = request.nextUrl.clone();
+      url.pathname = "/espace-client";
+      return NextResponse.redirect(url);
+    }
+  }
+
   return supabaseResponse;
 }

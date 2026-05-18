@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useState, useCallback, useMemo, type ReactNode } from "react";
+import { createContext, useState, useCallback, useMemo, useEffect, type ReactNode } from "react";
 
 export interface CartItem {
   id: string;
@@ -27,9 +27,41 @@ interface CartContextType {
 
 export const CartContext = createContext<CartContextType | null>(null);
 
+const CART_STORAGE_KEY = "glissegauloisse-cart";
+
+function loadCartFromStorage(): CartItem[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const stored = localStorage.getItem(CART_STORAGE_KEY);
+    if (stored) {
+      return JSON.parse(stored) as CartItem[];
+    }
+  } catch {
+    // Ignore parse errors
+  }
+  return [];
+}
+
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [isOpen, setIsOpen] = useState(false);
+  const [isHydrated, setIsHydrated] = useState(false);
+
+  // Load cart from localStorage on mount
+  useEffect(() => {
+    const stored = loadCartFromStorage();
+    if (stored.length > 0) {
+      setItems(stored);
+    }
+    setIsHydrated(true);
+  }, []);
+
+  // Persist cart to localStorage on changes (after hydration)
+  useEffect(() => {
+    if (isHydrated) {
+      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
+    }
+  }, [items, isHydrated]);
 
   const addItem = useCallback(
     (newItem: Omit<CartItem, "quantity">, quantity = 1) => {

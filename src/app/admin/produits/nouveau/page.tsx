@@ -23,6 +23,8 @@ export default function NouveauProduitPage() {
     isActive: true,
   });
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const generateSlug = (name: string) => {
     return name
       .toLowerCase()
@@ -38,10 +40,24 @@ export default function NouveauProduitPage() {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Submit to API
-    router.push("/admin/produits");
+    setIsSubmitting(true);
+    try {
+      const response = await fetch("/api/admin/products", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+      if (!response.ok) {
+        throw new Error("Failed to create product");
+      }
+      router.push("/admin/produits");
+    } catch (error) {
+      console.error("Product creation error:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -251,11 +267,12 @@ export default function NouveauProduitPage() {
           <div className="flex gap-3">
             <button
               type="submit"
+              disabled={isSubmitting}
               className={cn(
-                "flex-1 rounded-xl bg-vert-neon px-4 py-2.5 text-sm font-semibold text-noir-mat transition-colors hover:bg-vert-neon-dark"
+                "flex-1 rounded-xl bg-vert-neon px-4 py-2.5 text-sm font-semibold text-noir-mat transition-colors hover:bg-vert-neon-dark disabled:opacity-50"
               )}
             >
-              Enregistrer
+              {isSubmitting ? "Enregistrement..." : "Enregistrer"}
             </button>
             <Link
               href="/admin/produits"

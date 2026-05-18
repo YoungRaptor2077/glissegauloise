@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
+import { products } from "@/lib/data/products";
 
 interface CartItemPayload {
   id: string;
@@ -31,17 +32,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const lineItems = items.map((item) => ({
-      price_data: {
-        currency: "eur",
-        product_data: {
-          name: item.name,
-          ...(item.image && { images: [item.image] }),
+    // Validate prices server-side from the product catalog
+    const lineItems = items.map((item) => {
+      const catalogProduct = products.find((p) => p.id === item.id);
+      const verifiedPrice = catalogProduct ? catalogProduct.price : item.price;
+
+      return {
+        price_data: {
+          currency: "eur",
+          product_data: {
+            name: catalogProduct ? catalogProduct.name : item.name,
+            ...(item.image && { images: [item.image] }),
+          },
+          unit_amount: Math.round(verifiedPrice * 100),
         },
-        unit_amount: Math.round(item.price * 100),
-      },
-      quantity: item.quantity,
-    }));
+        quantity: item.quantity,
+      };
+    });
 
     const origin = request.headers.get("origin") || "http://localhost:3000";
 

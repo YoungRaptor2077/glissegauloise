@@ -16,23 +16,24 @@ export const metadata: Metadata = {
     process.env.NEXT_PUBLIC_SITE_URL || "https://glissegauloisse.fr"
   ),
   title: {
-    default: "GlisseGauloisse - Skateboard, Longboard & Surfskate Premium",
+    default: "GlisseGauloisse - Trottinettes Electriques : Reparation, Pieces & Accessoires",
     template: "%s | GlisseGauloisse",
   },
   description:
-    "Boutique en ligne de skateboard, longboard et surfskate premium a Eaubonne (95). Vente, reparation et conseils personnalises. Livraison en France.",
+    "Specialiste trottinette electrique a Eaubonne (95). Reparation, diagnostic, maintenance et vente de pieces detachees. Dualtron, Kaabo, Xiaomi, Ninebot. Livraison en France.",
   keywords: [
-    "skateboard",
-    "longboard",
-    "surfskate",
-    "glisse urbaine",
-    "reparation skate",
-    "boutique skate",
+    "trottinette electrique",
+    "reparation trottinette",
+    "pieces detachees trottinette",
+    "diagnostic trottinette electrique",
+    "maintenance trottinette",
+    "Dualtron",
+    "Kaabo",
+    "Xiaomi",
+    "Ninebot",
     "Eaubonne",
     "Val d'Oise",
     "France",
-    "premium",
-    "accessoires skate",
   ],
   authors: [{ name: "GlisseGauloisse" }],
   creator: "GlisseGauloisse",
@@ -48,18 +49,18 @@ export const metadata: Metadata = {
     },
   },
   openGraph: {
-    title: "GlisseGauloisse - Skateboard, Longboard & Surfskate Premium",
+    title: "GlisseGauloisse - Trottinettes Electriques : Reparation, Pieces & Accessoires",
     description:
-      "Boutique en ligne de skateboard, longboard et surfskate premium. Vente, reparation et conseils personnalises.",
+      "Specialiste trottinette electrique. Reparation, diagnostic, maintenance et vente de pieces detachees premium.",
     type: "website",
     locale: "fr_FR",
     siteName: "GlisseGauloisse",
   },
   twitter: {
     card: "summary_large_image",
-    title: "GlisseGauloisse - Skateboard, Longboard & Surfskate Premium",
+    title: "GlisseGauloisse - Trottinettes Electriques : Reparation, Pieces & Accessoires",
     description:
-      "Boutique en ligne de skateboard, longboard et surfskate premium. Vente, reparation et conseils personnalises.",
+      "Specialiste trottinette electrique. Reparation, diagnostic, maintenance et vente de pieces detachees premium.",
   },
 };
 

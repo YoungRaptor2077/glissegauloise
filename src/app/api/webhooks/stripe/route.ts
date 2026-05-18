@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
+import { createServiceClient } from "@/lib/supabase/service";
 import type Stripe from "stripe";
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
@@ -64,22 +65,40 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     metadata,
   });
 
-  // In production, this would create an order in Supabase:
-  // const supabase = createServiceClient();
-  // await supabase.from("orders").insert({
-  //   user_id: userId,
-  //   status: "confirmed",
-  //   items: JSON.parse(metadata?.items || "[]"),
-  //   subtotal: (session.amount_subtotal || 0) / 100,
-  //   shipping_cost: (session.shipping_cost?.amount_total || 0) / 100,
-  //   total: (session.amount_total || 0) / 100,
-  //   shipping_address: {
-  //     name: metadata?.shipping_name,
-  //     address: metadata?.shipping_address,
-  //     city: metadata?.shipping_city,
-  //     postalCode: metadata?.shipping_postal,
-  //     country: metadata?.shipping_country,
-  //   },
-  //   stripe_payment_intent_id: session.payment_intent as string,
-  // });
+  const supabase = createServiceClient();
+
+  // Look up user by email if available
+  let userId: string | null = null;
+  if (session.customer_details?.email) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("email", session.customer_details.email)
+      .single();
+    userId = profile?.id ?? null;
+  }
+
+  // If no user found, use a placeholder for guest orders
+  if (!userId) {
+    userId = "guest";
+  }
+
+  const items = metadata?.items ? JSON.parse(metadata.items) : [];
+
+  await supabase.from("orders").insert({
+    user_id: userId,
+    status: "confirmed",
+    items: items,
+    subtotal: (session.amount_subtotal || 0) / 100,
+    shipping_cost: (session.shipping_cost?.amount_total || 0) / 100,
+    total: (session.amount_total || 0) / 100,
+    shipping_address: {
+      name: metadata?.shipping_name || null,
+      address: metadata?.shipping_address || null,
+      city: metadata?.shipping_city || null,
+      postalCode: metadata?.shipping_postal || null,
+      country: metadata?.shipping_country || null,
+    },
+    stripe_payment_intent_id: session.payment_intent as string,
+  });
 }
