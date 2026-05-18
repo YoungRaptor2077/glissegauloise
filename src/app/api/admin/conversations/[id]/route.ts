@@ -167,6 +167,12 @@ export async function PATCH(
     }
 
     const body = await request.json();
+
+    const validStatuses = ["open", "closed"];
+    if (!body.status || !validStatuses.includes(body.status)) {
+      return NextResponse.json({ error: "Statut invalide" }, { status: 400 });
+    }
+
     const supabase = createServiceClient();
 
     const { error } = await supabase

@@ -69,10 +69,14 @@ export async function updateSession(request: NextRequest) {
         .eq("id", user.id)
         .single();
 
-      // If we can't read the profile, allow access (fail open for admin)
       if (profileError) {
         console.error("Middleware profile fetch error:", profileError);
-        return supabaseResponse;
+        if (request.nextUrl.pathname.startsWith("/api/admin")) {
+          return NextResponse.json({ error: "Erreur de verification" }, { status: 503 });
+        }
+        const url = request.nextUrl.clone();
+        url.pathname = "/espace-client";
+        return NextResponse.redirect(url);
       }
 
       const role = (profile as { role: string } | null)?.role;
@@ -88,7 +92,8 @@ export async function updateSession(request: NextRequest) {
         return NextResponse.redirect(url);
       }
     }
-    // If no service role key, skip admin check (allow access)
+    // If no service role key, skip middleware admin check
+    // (per-route verifyAdmin() provides secondary protection)
   }
 
   return supabaseResponse;

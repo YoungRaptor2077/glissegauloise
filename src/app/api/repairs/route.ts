@@ -74,9 +74,10 @@ export async function POST(request: NextRequest) {
         .select()
         .single();
 
+      let conversationCreated = true;
       if (conversationError) {
         console.error("Error creating conversation:", conversationError);
-        // Repair was created but conversation failed - still return success
+        conversationCreated = false;
       }
 
       // Create an initial message in the conversation
@@ -108,7 +109,14 @@ export async function POST(request: NextRequest) {
         location: body.localisation || null,
       });
 
-      return NextResponse.json({ success: true, repairId: repair.id });
+      const response: { success: boolean; repairId: string; warning?: string } = {
+        success: true,
+        repairId: repair.id,
+      };
+      if (!conversationCreated) {
+        response.warning = "La conversation n'a pas pu etre creee";
+      }
+      return NextResponse.json(response);
     } else {
       // Anonymous submission: just save to repair_requests
       const { error } = await supabase.from("repair_requests").insert({
