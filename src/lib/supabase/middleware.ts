@@ -56,30 +56,39 @@ export async function updateSession(request: NextRequest) {
   const isAdminRoute = request.nextUrl.pathname.startsWith("/admin") ||
     request.nextUrl.pathname.startsWith("/api/admin");
   if (isAdminRoute && user) {
-    // Use service role to bypass RLS for role checking
-    const { createClient } = await import("@supabase/supabase-js");
-    const serviceClient = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
-    const { data: profile } = await serviceClient
-      .from("profiles")
-      .select("role")
-      .eq("id", user.id)
-      .single();
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (serviceRoleKey) {
+      const { createClient } = await import("@supabase/supabase-js");
+      const serviceClient = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        serviceRoleKey
+      );
+      const { data: profile, error: profileError } = await serviceClient
+        .from("profiles")
+        .select("role")
+        .eq("id", user.id)
+        .single();
 
-    const role = (profile as { role: string } | null)?.role;
-    if (!role || !["admin", "super_admin"].includes(role)) {
-      if (request.nextUrl.pathname.startsWith("/api/admin")) {
-        return NextResponse.json(
-          { error: "Acces interdit" },
-          { status: 403 }
-        );
+      // If we can't read the profile, allow access (fail open for admin)
+      if (profileError) {
+        console.error("Middleware profile fetch error:", profileError);
+        return supabaseResponse;
       }
-      const url = request.nextUrl.clone();
-      url.pathname = "/espace-client";
-      return NextResponse.redirect(url);
+
+      const role = (profile as { role: string } | null)?.role;
+      if (!role || !["admin", "super_admin"].includes(role)) {
+        if (request.nextUrl.pathname.startsWith("/api/admin")) {
+          return NextResponse.json(
+            { error: "Acces interdit" },
+            { status: 403 }
+          );
+        }
+        const url = request.nextUrl.clone();
+        url.pathname = "/espace-client";
+        return NextResponse.redirect(url);
+      }
     }
+    // If no service role key, skip admin check (allow access)
   }
 
   return supabaseResponse;
