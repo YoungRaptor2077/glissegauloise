@@ -56,13 +56,19 @@ export async function updateSession(request: NextRequest) {
   const isAdminRoute = request.nextUrl.pathname.startsWith("/admin") ||
     request.nextUrl.pathname.startsWith("/api/admin");
   if (isAdminRoute && user) {
-    const { data: profile } = await supabase
+    // Use service role to bypass RLS for role checking
+    const { createClient } = await import("@supabase/supabase-js");
+    const serviceClient = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+    const { data: profile } = await serviceClient
       .from("profiles")
       .select("role")
       .eq("id", user.id)
       .single();
 
-    const role = profile?.role as string | undefined;
+    const role = (profile as { role: string } | null)?.role;
     if (!role || !["admin", "super_admin"].includes(role)) {
       if (request.nextUrl.pathname.startsWith("/api/admin")) {
         return NextResponse.json(
