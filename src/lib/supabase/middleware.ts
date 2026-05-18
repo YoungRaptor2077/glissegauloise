@@ -33,12 +33,19 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const protectedPaths = ["/espace-client", "/admin"];
+  const protectedPaths = ["/espace-client", "/admin", "/api/admin"];
   const isProtected = protectedPaths.some((path) =>
     request.nextUrl.pathname.startsWith(path)
   );
 
   if (isProtected && !user) {
+    // For API routes, return 401 JSON response instead of redirect
+    if (request.nextUrl.pathname.startsWith("/api/")) {
+      return NextResponse.json(
+        { error: "Non autorise" },
+        { status: 401 }
+      );
+    }
     const url = request.nextUrl.clone();
     url.pathname = "/connexion";
     url.searchParams.set("redirect", request.nextUrl.pathname);
@@ -46,7 +53,8 @@ export async function updateSession(request: NextRequest) {
   }
 
   // Admin role check: redirect non-admin users away from /admin routes
-  const isAdminRoute = request.nextUrl.pathname.startsWith("/admin");
+  const isAdminRoute = request.nextUrl.pathname.startsWith("/admin") ||
+    request.nextUrl.pathname.startsWith("/api/admin");
   if (isAdminRoute && user) {
     const { data: profile } = await supabase
       .from("profiles")
@@ -55,6 +63,12 @@ export async function updateSession(request: NextRequest) {
       .single();
 
     if (!profile || profile.role !== "admin") {
+      if (request.nextUrl.pathname.startsWith("/api/admin")) {
+        return NextResponse.json(
+          { error: "Acces interdit" },
+          { status: 403 }
+        );
+      }
       const url = request.nextUrl.clone();
       url.pathname = "/espace-client";
       return NextResponse.redirect(url);

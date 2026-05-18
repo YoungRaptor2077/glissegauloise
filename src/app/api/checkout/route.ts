@@ -33,22 +33,28 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate prices server-side from the product catalog
-    const lineItems = items.map((item) => {
+    const lineItems = [];
+    for (const item of items) {
       const catalogProduct = products.find((p) => p.id === item.id);
-      const verifiedPrice = catalogProduct ? catalogProduct.price : item.price;
+      if (!catalogProduct) {
+        return NextResponse.json(
+          { error: `Produit inconnu: ${item.id}` },
+          { status: 400 }
+        );
+      }
 
-      return {
+      lineItems.push({
         price_data: {
           currency: "eur",
           product_data: {
-            name: catalogProduct ? catalogProduct.name : item.name,
+            name: catalogProduct.name,
             ...(item.image && { images: [item.image] }),
           },
-          unit_amount: Math.round(verifiedPrice * 100),
+          unit_amount: Math.round(catalogProduct.price * 100),
         },
         quantity: item.quantity,
-      };
-    });
+      });
+    }
 
     const origin = request.headers.get("origin") || "http://localhost:3000";
 

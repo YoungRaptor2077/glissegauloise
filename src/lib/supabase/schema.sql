@@ -167,7 +167,7 @@ CREATE POLICY "Only admins can delete products"
 -- ============================================================
 CREATE TABLE orders (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  user_id UUID REFERENCES profiles(id) ON DELETE SET NULL,
   status order_status DEFAULT 'pending',
   items JSONB NOT NULL,
   subtotal DECIMAL(10, 2) NOT NULL,
@@ -189,7 +189,7 @@ CREATE POLICY "Users can view own orders"
 
 CREATE POLICY "Users can insert own orders"
   ON orders FOR INSERT
-  WITH CHECK (auth.uid() = user_id);
+  WITH CHECK (auth.uid() = user_id OR user_id IS NULL);
 
 CREATE POLICY "Admins can view all orders"
   ON orders FOR SELECT
@@ -452,6 +452,81 @@ CREATE POLICY "Admins can view all invoices"
 
 CREATE POLICY "Admins can manage invoices"
   ON invoices FOR ALL
+  USING (
+    EXISTS (
+      SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'
+    )
+  );
+
+-- ============================================================
+-- CONTACT SUBMISSIONS
+-- ============================================================
+CREATE TABLE contact_submissions (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  name TEXT NOT NULL,
+  email TEXT NOT NULL,
+  phone TEXT,
+  subject TEXT,
+  message TEXT NOT NULL,
+  is_read BOOLEAN DEFAULT false,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE contact_submissions ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Admins can view all contact submissions"
+  ON contact_submissions FOR SELECT
+  USING (
+    EXISTS (
+      SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'
+    )
+  );
+
+CREATE POLICY "Anyone can insert contact submissions"
+  ON contact_submissions FOR INSERT
+  WITH CHECK (true);
+
+CREATE POLICY "Admins can update contact submissions"
+  ON contact_submissions FOR UPDATE
+  USING (
+    EXISTS (
+      SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'
+    )
+  );
+
+-- ============================================================
+-- REPAIR REQUESTS
+-- ============================================================
+CREATE TABLE repair_requests (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  brand TEXT NOT NULL,
+  model TEXT,
+  description TEXT NOT NULL,
+  urgency TEXT DEFAULT 'normal',
+  contact_preference TEXT DEFAULT 'email',
+  phone TEXT,
+  email TEXT NOT NULL,
+  location TEXT,
+  is_read BOOLEAN DEFAULT false,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE repair_requests ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Admins can view all repair requests"
+  ON repair_requests FOR SELECT
+  USING (
+    EXISTS (
+      SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'
+    )
+  );
+
+CREATE POLICY "Anyone can insert repair requests"
+  ON repair_requests FOR INSERT
+  WITH CHECK (true);
+
+CREATE POLICY "Admins can update repair requests"
+  ON repair_requests FOR UPDATE
   USING (
     EXISTS (
       SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'

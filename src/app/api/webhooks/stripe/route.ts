@@ -78,11 +78,6 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     userId = profile?.id ?? null;
   }
 
-  // If no user found, use a placeholder for guest orders
-  if (!userId) {
-    userId = "guest";
-  }
-
   const items = metadata?.items ? JSON.parse(metadata.items) : [];
 
   await supabase.from("orders").insert({

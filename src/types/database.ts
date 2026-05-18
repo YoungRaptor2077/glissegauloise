@@ -135,7 +135,7 @@ export interface Database {
       orders: {
         Row: {
           id: string;
-          user_id: string;
+          user_id: string | null;
           status: "pending" | "confirmed" | "shipped" | "delivered" | "cancelled";
           items: Json;
           subtotal: number;
@@ -150,7 +150,7 @@ export interface Database {
         };
         Insert: {
           id?: string;
-          user_id: string;
+          user_id?: string | null;
           status?: "pending" | "confirmed" | "shipped" | "delivered" | "cancelled";
           items: Json;
           subtotal: number;
@@ -165,7 +165,7 @@ export interface Database {
         };
         Update: {
           id?: string;
-          user_id?: string;
+          user_id?: string | null;
           status?: "pending" | "confirmed" | "shipped" | "delivered" | "cancelled";
           items?: Json;
           subtotal?: number;

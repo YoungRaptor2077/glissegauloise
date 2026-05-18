@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { createClient } from "@/lib/supabase/server";
 
 interface ProductPayload {
   name: string;
@@ -17,6 +18,31 @@ interface ProductPayload {
 
 export async function POST(request: NextRequest) {
   try {
+    // Verify authentication and admin role
+    const authClient = await createClient();
+    const { data: { user } } = await authClient.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json(
+        { error: "Non autorise" },
+        { status: 401 }
+      );
+    }
+
+    const { data: profile } = await authClient
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .single();
+
+    const profileRole = (profile as { role: string } | null)?.role;
+    if (!profileRole || profileRole !== "admin") {
+      return NextResponse.json(
+        { error: "Acces interdit" },
+        { status: 403 }
+      );
+    }
+
     const body = (await request.json()) as ProductPayload;
 
     if (!body.name || !body.slug || !body.price) {
