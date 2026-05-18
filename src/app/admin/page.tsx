@@ -12,8 +12,7 @@ import {
   FileText,
 } from "lucide-react";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/client";
-import type { Order, Repair, Profile } from "@/types/database";
+
 
 interface RecentOrder {
   id: string;
@@ -70,100 +69,25 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     async function fetchDashboardData() {
-      const supabase = createClient();
-      const now = new Date();
-      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-
       try {
-        // Fetch orders this month (not cancelled) for count and revenue
-        const { data: monthOrders } = await supabase
-          .from("orders")
-          .select("*")
-          .gte("created_at", startOfMonth)
-          .neq("status", "cancelled") as { data: Order[] | null };
+        const response = await fetch('/api/admin/dashboard');
+        if (!response.ok) throw new Error('Failed to fetch');
+        const data = await response.json();
 
-        if (monthOrders) {
-          setOrderCount(monthOrders.length);
-          setRevenue(monthOrders.reduce((sum, o) => sum + (o.total || 0), 0));
-        }
-
-        // Active repairs count
-        const { count: activeRepairs } = await supabase
-          .from("repairs")
-          .select("*", { count: "exact", head: true })
-          .in("status", ["pending", "diagnosed", "in_progress"]);
-
-        setRepairCount(activeRepairs || 0);
-
-        // New clients this month
-        const { count: newClients } = await supabase
-          .from("profiles")
-          .select("*", { count: "exact", head: true })
-          .gte("created_at", startOfMonth);
-
-        setClientCount(newClients || 0);
-
-        // 4 most recent orders with profile name
-        const { data: orders } = await supabase
-          .from("orders")
-          .select("*")
-          .order("created_at", { ascending: false })
-          .limit(4) as { data: Order[] | null };
-
-        if (orders) {
-          const orderUserIds = [...new Set(orders.map((o) => o.user_id).filter(Boolean))] as string[];
-          const orderProfileMap: Record<string, Profile> = {};
-          if (orderUserIds.length > 0) {
-            const { data: profiles } = await supabase
-              .from("profiles")
-              .select("*")
-              .in("id", orderUserIds) as { data: Profile[] | null };
-            if (profiles) {
-              profiles.forEach((p) => { orderProfileMap[p.id] = p; });
-            }
-          }
-
-          setRecentOrders(
-            orders.map((o) => ({
-              id: o.id.substring(0, 8).toUpperCase(),
-              client: (o.user_id && orderProfileMap[o.user_id]?.full_name) || "Client",
-              total: o.total,
-              status: orderStatusLabels[o.status] || o.status,
-              date: new Date(o.created_at).toLocaleDateString("fr-FR"),
-            }))
-          );
-        }
-
-        // 3 most recent repairs with profile name
-        const { data: repairs } = await supabase
-          .from("repairs")
-          .select("*")
-          .order("created_at", { ascending: false })
-          .limit(3) as { data: Repair[] | null };
-
-        if (repairs) {
-          const repairUserIds = [...new Set(repairs.map((r) => r.user_id).filter(Boolean))] as string[];
-          const repairProfileMap: Record<string, Profile> = {};
-          if (repairUserIds.length > 0) {
-            const { data: profiles } = await supabase
-              .from("profiles")
-              .select("*")
-              .in("id", repairUserIds) as { data: Profile[] | null };
-            if (profiles) {
-              profiles.forEach((p) => { repairProfileMap[p.id] = p; });
-            }
-          }
-
-          setRecentRepairs(
-            repairs.map((r) => ({
-              id: r.id.substring(0, 8).toUpperCase(),
-              client: (r.user_id && repairProfileMap[r.user_id]?.full_name) || "Client",
-              board: `${r.brand || ""} ${r.board_type}`.trim(),
-              status: repairStatusLabels[r.status] || r.status,
-              date: new Date(r.created_at).toLocaleDateString("fr-FR"),
-            }))
-          );
-        }
+        setRevenue(data.revenue);
+        setOrderCount(data.orderCount);
+        setRepairCount(data.repairCount);
+        setClientCount(data.clientCount);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        setRecentOrders(data.recentOrders.map((o: any) => ({
+          ...o,
+          status: orderStatusLabels[o.status] || o.status,
+        })));
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        setRecentRepairs(data.recentRepairs.map((r: any) => ({
+          ...r,
+          status: repairStatusLabels[r.status] || r.status,
+        })));
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
       } finally {

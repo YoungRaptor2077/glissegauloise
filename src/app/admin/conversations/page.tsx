@@ -4,9 +4,6 @@ import { useState, useEffect } from "react";
 import { MessageSquare, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/Badge";
-import { createClient } from "@/lib/supabase/client";
-import { useUser } from "@/lib/hooks/useUser";
-import type { Conversation, Profile, Message } from "@/types/database";
 
 interface ConversationRow {
   id: string;
@@ -37,78 +34,26 @@ function formatRelativeTime(dateStr: string): string {
 export default function AdminConversationsPage() {
   const [conversations, setConversations] = useState<ConversationRow[]>([]);
   const [loading, setLoading] = useState(true);
-  const { user } = useUser();
 
   useEffect(() => {
     async function fetchConversations() {
-      const supabase = createClient();
-
-      const { data } = await supabase
-        .from("conversations")
-        .select("*")
-        .order("updated_at", { ascending: false }) as { data: Conversation[] | null };
-
-      if (data) {
-        // Fetch profiles
-        const userIds = [...new Set(data.map((c) => c.user_id).filter(Boolean))] as string[];
-        const profileMap: Record<string, Profile> = {};
-
-        if (userIds.length > 0) {
-          const { data: profiles } = await supabase
-            .from("profiles")
-            .select("*")
-            .in("id", userIds) as { data: Profile[] | null };
-          if (profiles) {
-            profiles.forEach((p) => { profileMap[p.id] = p; });
-          }
-        }
-
-        const convRows: ConversationRow[] = [];
-
-        for (const conv of data) {
-          const profile = conv.user_id ? profileMap[conv.user_id] : null;
-
-          // Fetch the last message
-          const { data: lastMsg } = await supabase
-            .from("messages")
-            .select("*")
-            .eq("conversation_id", conv.id)
-            .order("created_at", { ascending: false })
-            .limit(1)
-            .single() as { data: Message | null };
-
-          // Count unread messages (not from admin)
-          let unreadCount = 0;
-          if (user) {
-            const { count } = await supabase
-              .from("messages")
-              .select("*", { count: "exact", head: true })
-              .eq("conversation_id", conv.id)
-              .eq("is_read", false)
-              .neq("sender_id", user.id);
-            unreadCount = count || 0;
-          }
-
-          convRows.push({
-            id: conv.id,
-            customerName: profile?.full_name || "Client",
-            subject: conv.subject,
-            lastMessage: lastMsg?.content || "",
-            date: formatRelativeTime(lastMsg?.created_at || conv.updated_at),
-            unread: unreadCount,
-            status: conv.status,
-          });
-        }
-
-        setConversations(convRows);
+      try {
+        const response = await fetch('/api/admin/conversations');
+        if (!response.ok) throw new Error('Failed to fetch');
+        const data = await response.json();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        setConversations(data.conversations.map((conv: any) => ({
+          ...conv,
+          date: formatRelativeTime(conv.date),
+        })));
+      } catch (error) {
+        console.error("Error fetching conversations:", error);
       }
       setLoading(false);
     }
 
-    if (user !== undefined) {
-      fetchConversations();
-    }
-  }, [user]);
+    fetchConversations();
+  }, []);
 
   if (loading) {
     return (

@@ -11,7 +11,6 @@ import { createClient } from "@/lib/supabase/client";
 import { useUser } from "@/lib/hooks/useUser";
 import { subscribeToMessages, unsubscribeChannel } from "@/lib/supabase/realtime";
 import type { RealtimeMessage } from "@/lib/supabase/realtime";
-import type { Conversation, Profile, Message } from "@/types/database";
 
 interface MessageItem {
   id: string;
@@ -65,68 +64,34 @@ export default function AdminConversationDetailPage() {
   useEffect(() => {
     async function fetchData() {
       if (!conversationId) return;
-      const supabase = createClient();
 
-      // Fetch conversation
-      const { data: conv } = await supabase
-        .from("conversations")
-        .select("*")
-        .eq("id", conversationId)
-        .single() as { data: Conversation | null };
+      try {
+        const response = await fetch(`/api/admin/conversations/${conversationId}`);
+        if (!response.ok) throw new Error('Failed to fetch');
+        const data = await response.json();
 
-      if (conv) {
         setConversation({
-          id: conv.id,
-          subject: conv.subject,
-          status: conv.status,
+          id: data.conversation.id,
+          subject: data.conversation.subject,
+          status: data.conversation.status,
         });
 
-        // Fetch customer profile
-        if (conv.user_id) {
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("*")
-            .eq("id", conv.user_id)
-            .single() as { data: Profile | null };
-          if (profile) {
-            setCustomer({
-              name: profile.full_name || "Client",
-              email: profile.email,
-              phone: profile.phone,
-            });
-          }
+        if (data.customer) {
+          setCustomer(data.customer);
         }
-      }
 
-      // Fetch messages
-      const { data: msgs } = await supabase
-        .from("messages")
-        .select("*")
-        .eq("conversation_id", conversationId)
-        .order("created_at", { ascending: true }) as { data: Message[] | null };
-
-      if (msgs) {
-        setMessages(msgs);
-      }
-
-      // Mark unread messages as read (those not sent by current admin)
-      if (user) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { error: markError } = await (supabase.from("messages") as any)
-          .update({ is_read: true })
-          .eq("conversation_id", conversationId)
-          .eq("is_read", false)
-          .neq("sender_id", user.id);
-        if (markError) {
-          console.error("Failed to mark messages as read:", markError);
+        if (data.messages) {
+          setMessages(data.messages);
         }
+      } catch (err) {
+        console.error("Error fetching conversation:", err);
       }
 
       setLoading(false);
     }
 
     fetchData();
-  }, [conversationId, user]);
+  }, [conversationId]);
 
   // Subscribe to realtime messages
   useEffect(() => {
@@ -162,26 +127,27 @@ export default function AdminConversationDetailPage() {
     async (content: string) => {
       if (!user || !conversationId) return;
       setError(null);
-      const supabase = createClient();
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (supabase.from("messages") as any)
-        .insert({
-          conversation_id: conversationId,
-          sender_id: user.id,
-          content,
-          attachments: [],
-          is_read: false,
-        })
-        .select()
-        .single() as { data: Message | null; error: unknown };
-
-      if (!error && data) {
-        setMessages((prev) => {
-          if (prev.some((m) => m.id === data.id)) return prev;
-          return [...prev, data];
+      try {
+        const response = await fetch(`/api/admin/conversations/${conversationId}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ content }),
         });
-      } else if (error) {
+
+        if (!response.ok) {
+          setError("Erreur lors de l'envoi du message.");
+          return;
+        }
+
+        const data = await response.json();
+        if (data.message) {
+          setMessages((prev) => {
+            if (prev.some((m) => m.id === data.message.id)) return prev;
+            return [...prev, data.message];
+          });
+        }
+      } catch {
         setError("Erreur lors de l'envoi du message.");
       }
     },
@@ -191,15 +157,20 @@ export default function AdminConversationDetailPage() {
   const handleCloseConversation = async () => {
     if (!conversationId) return;
     setError(null);
-    const supabase = createClient();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase.from("conversations") as any)
-      .update({ status: "closed" })
-      .eq("id", conversationId);
 
-    if (!error) {
-      setConversation((prev) => prev ? { ...prev, status: "closed" } : null);
-    } else {
+    try {
+      const response = await fetch(`/api/admin/conversations/${conversationId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: "closed" }),
+      });
+
+      if (response.ok) {
+        setConversation((prev) => prev ? { ...prev, status: "closed" } : null);
+      } else {
+        setError("Erreur lors de la fermeture de la conversation.");
+      }
+    } catch {
       setError("Erreur lors de la fermeture de la conversation.");
     }
   };
