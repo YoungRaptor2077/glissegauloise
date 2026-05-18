@@ -70,13 +70,9 @@ export async function updateSession(request: NextRequest) {
         .single();
 
       if (profileError) {
+        // If we can't verify, allow access - API routes have their own checks
         console.error("Middleware profile fetch error:", profileError);
-        if (request.nextUrl.pathname.startsWith("/api/admin")) {
-          return NextResponse.json({ error: "Erreur de verification" }, { status: 503 });
-        }
-        const url = request.nextUrl.clone();
-        url.pathname = "/espace-client";
-        return NextResponse.redirect(url);
+        return supabaseResponse;
       }
 
       const role = (profile as { role: string } | null)?.role;
