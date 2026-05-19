@@ -81,8 +81,8 @@ export async function GET(
         id: conv.id,
         subject: conv.subject,
         status: conv.status,
-        related_order_id: conv.related_order_id || null,
-        related_repair_id: conv.related_repair_id || null,
+        type: (conv as { type?: string }).type || null,
+        related_id: (conv as { related_id?: string | null }).related_id || null,
       },
       customer,
       messages: messages || [],
@@ -130,6 +130,7 @@ export async function POST(
         conversation_id: id,
         sender_id: admin.id,
         content: body.content,
+        is_admin: true,
         attachments: [],
         is_read: false,
       })
@@ -168,7 +169,7 @@ export async function PATCH(
 
     const body = await request.json();
 
-    const validStatuses = ["open", "closed"];
+    const validStatuses = ["open", "closed", "archived"];
     if (!body.status || !validStatuses.includes(body.status)) {
       return NextResponse.json({ error: "Statut invalide" }, { status: 400 });
     }

@@ -32,7 +32,7 @@ export async function GET() {
     const { data: profiles, error: profilesError } = await supabase
       .from("profiles")
       .select("id, full_name, email, phone, created_at")
-      .eq("role", "customer");
+      .eq("role", "client");
 
     if (profilesError) {
       console.error("Error fetching profiles:", profilesError);

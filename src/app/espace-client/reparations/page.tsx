@@ -11,14 +11,16 @@ import { useUser } from "@/lib/hooks/useUser";
 import type { Repair } from "@/types/database";
 
 const statusConfig: Record<string, { label: string; variant: BadgeVariant }> = {
-  pending: { label: "En attente", variant: "warning" },
-  diagnosed: { label: "Diagnostiquee", variant: "neon" },
+  received: { label: "Recu", variant: "warning" },
+  diagnostic: { label: "Diagnostic", variant: "neon" },
+  waiting_parts: { label: "En attente pieces", variant: "warning" },
   in_progress: { label: "En cours", variant: "neon" },
+  testing: { label: "En test", variant: "neon" },
   completed: { label: "Terminee", variant: "success" },
-  cancelled: { label: "Annulee", variant: "error" },
+  ready_pickup: { label: "Pret a recuperer", variant: "success" },
 };
 
-const timelineSteps = ["pending", "diagnosed", "in_progress", "completed"];
+const timelineSteps = ["received", "diagnostic", "waiting_parts", "in_progress", "testing", "completed", "ready_pickup"];
 
 function RepairTimeline({ currentStatus }: { currentStatus: string }) {
   const currentIndex = timelineSteps.indexOf(currentStatus);
@@ -139,14 +141,14 @@ export default function ReparationsPage() {
                         <Badge variant={status.variant}>{status.label}</Badge>
                       </div>
                       <p className="text-xs text-blanc-casse/50 mt-1">
-                        {repair.board_type}
-                        {repair.brand ? ` ${repair.brand}` : ""} -{" "}
+                        {repair.brand}
+                        {repair.model ? ` ${repair.model}` : ""} -{" "}
                         {formatDate(repair.created_at)}
                       </p>
                       <p className="text-sm text-blanc-casse/70 mt-2">
-                        {repair.description}
+                        {repair.issue_description}
                       </p>
-                      {repair.status !== "cancelled" && (
+                      {repair.status !== "completed" && repair.status !== "ready_pickup" && (
                         <RepairTimeline currentStatus={repair.status} />
                       )}
                     </div>

@@ -28,9 +28,9 @@ interface MessageItem {
 interface ConversationInfo {
   id: string;
   subject: string;
-  status: "open" | "closed";
-  related_order_id: string | null;
-  related_repair_id: string | null;
+  status: "open" | "closed" | "archived";
+  type: "general" | "quote" | "repair" | "order" | "support";
+  related_id: string | null;
 }
 
 function formatTimestamp(dateStr: string): string {
@@ -92,8 +92,8 @@ export default function ConversationDetailPage() {
         id: conv.id,
         subject: conv.subject,
         status: conv.status,
-        related_order_id: conv.related_order_id,
-        related_repair_id: conv.related_repair_id,
+        type: conv.type,
+        related_id: conv.related_id,
       });
 
       // Fetch messages
@@ -175,6 +175,7 @@ export default function ConversationDetailPage() {
           conversation_id: conversationId,
           sender_id: user.id,
           content,
+          is_admin: false,
           attachments: [],
           is_read: false,
         })
@@ -239,21 +240,14 @@ export default function ConversationDetailPage() {
             {conversation.subject}
           </h1>
           <div className="flex items-center gap-2 mt-1">
-            {conversation.related_repair_id ? (
+            {conversation.type === "repair" ? (
               <Wrench className="h-3.5 w-3.5 text-vert-neon" />
-            ) : conversation.related_order_id ? (
+            ) : conversation.type === "order" ? (
               <Package className="h-3.5 w-3.5 text-vert-neon" />
             ) : null}
-            {(conversation.related_repair_id ||
-              conversation.related_order_id) && (
+            {conversation.related_id && (
               <span className="text-xs text-blanc-casse/50">
-                {(
-                  conversation.related_repair_id ||
-                  conversation.related_order_id ||
-                  ""
-                )
-                  .slice(0, 8)
-                  .toUpperCase()}
+                {conversation.related_id.slice(0, 8).toUpperCase()}
               </span>
             )}
             <Badge
