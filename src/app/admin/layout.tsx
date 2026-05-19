@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { NotificationBell } from "@/components/admin/NotificationBell";
 import { User } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
 
 export default function AdminLayout({
   children,
@@ -18,28 +17,26 @@ export default function AdminLayout({
 
   useEffect(() => {
     async function checkAdmin() {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
+      try {
+        const res = await fetch("/api/auth/me");
+        const data = await res.json();
 
-      if (!user) {
-        router.push("/connexion");
-        return;
-      }
+        if (!data.authenticated) {
+          router.push("/connexion");
+          return;
+        }
 
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", user.id)
-        .single();
+        if (!data.role || !["admin", "super_admin"].includes(data.role)) {
+          router.push("/espace-client");
+          return;
+        }
 
-      const role = (profile as { role: string } | null)?.role;
-      if (!role || !["admin", "super_admin"].includes(role)) {
+        setIsAdmin(true);
+      } catch {
         router.push("/espace-client");
-        return;
+      } finally {
+        setLoading(false);
       }
-
-      setIsAdmin(true);
-      setLoading(false);
     }
 
     checkAdmin();
