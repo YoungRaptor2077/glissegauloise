@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
-import { createClient } from "@/lib/supabase/server";
 
 interface ProductPayload {
   name: string;
@@ -16,27 +15,9 @@ interface ProductPayload {
   isActive: boolean;
 }
 
-async function verifyAdmin() {
-  const authClient = await createClient();
-  const { data: { user } } = await authClient.auth.getUser();
-
-  if (!user) {
-    return { error: NextResponse.json({ error: "Non autorise" }, { status: 401 }) };
-  }
-
-  const serviceClient = createServiceClient();
-  const { data: profile } = await serviceClient
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single();
-
-  const profileRole = (profile as { role: string } | null)?.role;
-  if (!profileRole || !["admin", "super_admin"].includes(profileRole)) {
-    return { error: NextResponse.json({ error: "Acces interdit" }, { status: 403 }) };
-  }
-
-  return { user };
+function isAdminAuthenticated(request: NextRequest): boolean {
+  const cookie = request.cookies.get("admin_session");
+  return cookie?.value === "authenticated";
 }
 
 export async function PUT(
@@ -45,8 +26,9 @@ export async function PUT(
 ) {
   try {
     const { id } = await params;
-    const result = await verifyAdmin();
-    if ("error" in result && result.error) return result.error;
+    if (!isAdminAuthenticated(request)) {
+      return NextResponse.json({ error: "Non autorise" }, { status: 401 });
+    }
 
     const body = (await request.json()) as ProductPayload;
 
@@ -100,8 +82,9 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const result = await verifyAdmin();
-    if ("error" in result && result.error) return result.error;
+    if (!isAdminAuthenticated(request)) {
+      return NextResponse.json({ error: "Non autorise" }, { status: 401 });
+    }
 
     const supabase = createServiceClient();
 

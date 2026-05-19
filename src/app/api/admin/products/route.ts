@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
-import { createClient } from "@/lib/supabase/server";
 
 interface ProductPayload {
   name: string;
@@ -16,31 +15,17 @@ interface ProductPayload {
   isActive: boolean;
 }
 
+function isAdminAuthenticated(request: NextRequest): boolean {
+  const cookie = request.cookies.get("admin_session");
+  return cookie?.value === "authenticated";
+}
+
 export async function POST(request: NextRequest) {
   try {
-    // Verify authentication and admin role
-    const authClient = await createClient();
-    const { data: { user } } = await authClient.auth.getUser();
-
-    if (!user) {
+    if (!isAdminAuthenticated(request)) {
       return NextResponse.json(
         { error: "Non autorise" },
         { status: 401 }
-      );
-    }
-
-    const serviceClient = createServiceClient();
-    const { data: profile } = await serviceClient
-      .from("profiles")
-      .select("role")
-      .eq("id", user.id)
-      .single();
-
-    const profileRole = (profile as { role: string } | null)?.role;
-    if (!profileRole || !["admin", "super_admin"].includes(profileRole)) {
-      return NextResponse.json(
-        { error: "Acces interdit" },
-        { status: 403 }
       );
     }
 
@@ -63,6 +48,7 @@ export async function POST(request: NextRequest) {
       compare_at_price: body.compareAtPrice ? parseFloat(body.compareAtPrice) : null,
       stock: body.stock ? parseInt(body.stock, 10) : 0,
       category_id: body.categoryId || null,
+      brand: body.brand || null,
       images: body.images || [],
       is_featured: body.isFeatured ?? false,
       is_active: body.isActive ?? true,
