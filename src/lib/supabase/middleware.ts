@@ -38,8 +38,8 @@ export async function updateSession(request: NextRequest) {
     request.nextUrl.pathname.startsWith(path)
   );
 
+  // If not logged in, redirect to login
   if (isProtected && !user) {
-    // For API routes, return 401 JSON response instead of redirect
     if (request.nextUrl.pathname.startsWith("/api/")) {
       return NextResponse.json(
         { error: "Non autorise" },
@@ -52,40 +52,8 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Admin role check using the authenticated user's own session
-  const isAdminRoute = request.nextUrl.pathname.startsWith("/admin") ||
-    request.nextUrl.pathname.startsWith("/api/admin");
-  if (isAdminRoute && user) {
-    // Read profile using the user's own authenticated session
-    const { data: profile, error: profileError } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", user.id)
-      .single();
-
-    if (profileError || !profile) {
-      // Cannot verify role = deny access
-      if (request.nextUrl.pathname.startsWith("/api/admin")) {
-        return NextResponse.json({ error: "Acces interdit" }, { status: 403 });
-      }
-      const url = request.nextUrl.clone();
-      url.pathname = "/espace-client";
-      return NextResponse.redirect(url);
-    }
-
-    const role = (profile as { role: string }).role;
-    if (!role || !["admin", "super_admin"].includes(role)) {
-      if (request.nextUrl.pathname.startsWith("/api/admin")) {
-        return NextResponse.json(
-          { error: "Acces interdit" },
-          { status: 403 }
-        );
-      }
-      const url = request.nextUrl.clone();
-      url.pathname = "/espace-client";
-      return NextResponse.redirect(url);
-    }
-  }
+  // Admin role check is handled in the admin layout component
+  // The middleware only ensures the user is authenticated
 
   return supabaseResponse;
 }
