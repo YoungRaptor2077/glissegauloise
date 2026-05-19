@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { NotificationBell } from "@/components/admin/NotificationBell";
 import { User } from "lucide-react";
@@ -11,38 +11,45 @@ export default function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const router = useRouter();
-  const [isAdmin, setIsAdmin] = useState(false);
+  const pathname = usePathname();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  // If we're on the login page, just render children (login has its own layout)
+  const isLoginPage = pathname === "/admin/login";
+
   useEffect(() => {
-    async function checkAdmin() {
+    if (isLoginPage) {
+      setLoading(false);
+      return;
+    }
+
+    async function checkAuth() {
       try {
-        const res = await fetch("/api/auth/me");
+        const res = await fetch("/api/admin/auth");
         const data = await res.json();
 
         if (!data.authenticated) {
-          router.push("/connexion");
+          window.location.href = "/admin/login";
           return;
         }
 
-        if (!data.role || !["admin", "super_admin"].includes(data.role)) {
-          router.push("/espace-client");
-          return;
-        }
-
-        setIsAdmin(true);
+        setIsAuthenticated(true);
       } catch {
-        router.push("/espace-client");
+        window.location.href = "/admin/login";
       } finally {
         setLoading(false);
       }
     }
 
-    checkAdmin();
-  }, [router]);
+    checkAuth();
+  }, [isLoginPage]);
 
-  if (loading || !isAdmin) {
+  if (isLoginPage) {
+    return <>{children}</>;
+  }
+
+  if (loading || !isAuthenticated) {
     return (
       <div className="flex h-screen items-center justify-center bg-gris-anthracite">
         <div className="animate-pulse text-blanc-casse/60">Chargement...</div>

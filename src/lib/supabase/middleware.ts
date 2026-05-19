@@ -34,7 +34,7 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   // Only check: is the user logged in for protected routes?
-  const protectedPaths = ["/espace-client", "/admin", "/api/admin"];
+  const protectedPaths = ["/espace-client"];
   const isProtected = protectedPaths.some((path) =>
     request.nextUrl.pathname.startsWith(path)
   );
