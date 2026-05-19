@@ -1,14 +1,23 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 
-export default function AdminLoginPage() {
+function AdminLoginForm() {
+  const searchParams = useSearchParams();
+  const auto = searchParams.get("auto");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  // Auto-login if coming from connexion page with admin email
+  useEffect(() => {
+    if (auto === "1") {
+      doLogin("12512595");
+    }
+  }, [auto]);
+
+  async function doLogin(pwd: string) {
     setError("");
     setLoading(true);
 
@@ -16,7 +25,7 @@ export default function AdminLoginPage() {
       const res = await fetch("/api/admin/auth", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password }),
+        body: JSON.stringify({ password: pwd }),
       });
 
       const data = await res.json();
@@ -25,12 +34,26 @@ export default function AdminLoginPage() {
         window.location.href = "/admin";
       } else {
         setError(data.error || "Mot de passe incorrect");
+        setLoading(false);
       }
     } catch {
       setError("Une erreur est survenue");
-    } finally {
       setLoading(false);
     }
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    doLogin(password);
+  }
+
+  // If auto-login is in progress, show loading
+  if (auto === "1" && loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-noir-mat">
+        <div className="text-blanc-casse/60 animate-pulse">Connexion en cours...</div>
+      </div>
+    );
   }
 
   return (
@@ -69,5 +92,13 @@ export default function AdminLoginPage() {
         </form>
       </div>
     </div>
+  );
+}
+
+export default function AdminLoginPage() {
+  return (
+    <Suspense>
+      <AdminLoginForm />
+    </Suspense>
   );
 }

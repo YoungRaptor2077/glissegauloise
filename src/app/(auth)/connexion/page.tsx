@@ -8,6 +8,8 @@ import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { createClient } from "@/lib/supabase/client";
 
+const ADMIN_EMAILS = ["gdrmathis15@gmail.com"];
+
 function ConnexionForm() {
   const searchParams = useSearchParams();
   const redirect = searchParams.get("redirect");
@@ -33,23 +35,13 @@ function ConnexionForm() {
       return;
     }
 
-    // Check if user is admin via Supabase role
-    try {
-      const adminRes = await fetch("/api/admin/auth", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email }),
-      });
-      const adminData = await adminRes.json();
-      if (adminData.success) {
-        window.location.href = "/admin";
-        return;
-      }
-    } catch {
-      // Not admin or check failed, continue to espace-client
+    // If admin email, go to admin login with auto-submit
+    if (ADMIN_EMAILS.includes(email.toLowerCase().trim())) {
+      window.location.href = "/admin/login?auto=1";
+      return;
     }
 
-    // Redirect to where the user wanted to go, or default to espace-client
+    // Normal user -> espace client
     window.location.href = redirect || "/espace-client";
   }
 
