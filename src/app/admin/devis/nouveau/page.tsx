@@ -73,29 +73,23 @@ export default function NouveauDevisPage() {
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-blanc-casse/80">Client</label>
-                <select
+                <input
+                  type="text"
                   value={formData.clientId}
                   onChange={(e) => setFormData((prev) => ({ ...prev, clientId: e.target.value }))}
-                  className="w-full rounded-xl border border-white/10 bg-gris-anthracite px-4 py-2.5 text-sm text-blanc-casse focus:border-vert-neon/50 focus:outline-none focus:ring-1 focus:ring-vert-neon/30"
-                >
-                  <option value="">Selectionner un client...</option>
-                  <option value="1">Jean Dupont</option>
-                  <option value="2">Marie Martin</option>
-                  <option value="3">Pierre Durand</option>
-                  <option value="4">Lucas Moreau</option>
-                </select>
+                  placeholder="ID ou email du client (optionnel)"
+                  className="w-full rounded-xl border border-white/10 bg-gris-anthracite px-4 py-2.5 text-sm text-blanc-casse placeholder:text-blanc-casse/40 focus:border-vert-neon/50 focus:outline-none focus:ring-1 focus:ring-vert-neon/30"
+                />
               </div>
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-blanc-casse/80">Reparation liee</label>
-                <select
+                <input
+                  type="text"
                   value={formData.repairId}
                   onChange={(e) => setFormData((prev) => ({ ...prev, repairId: e.target.value }))}
-                  className="w-full rounded-xl border border-white/10 bg-gris-anthracite px-4 py-2.5 text-sm text-blanc-casse focus:border-vert-neon/50 focus:outline-none focus:ring-1 focus:ring-vert-neon/30"
-                >
-                  <option value="">Aucune (optionnel)</option>
-                  <option value="REP-001">REP-001 - Lucas Moreau</option>
-                  <option value="REP-002">REP-002 - Emma Petit</option>
-                </select>
+                  placeholder="ID de la reparation (optionnel)"
+                  className="w-full rounded-xl border border-white/10 bg-gris-anthracite px-4 py-2.5 text-sm text-blanc-casse placeholder:text-blanc-casse/40 focus:border-vert-neon/50 focus:outline-none focus:ring-1 focus:ring-vert-neon/30"
+                />
               </div>
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-blanc-casse/80">Valide jusqu&apos;au</label>

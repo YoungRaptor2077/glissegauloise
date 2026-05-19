@@ -12,33 +12,11 @@ interface Notification {
   read: boolean;
 }
 
-const mockNotifications: Notification[] = [
-  {
-    id: "1",
-    title: "Nouvelle commande",
-    message: "Commande #1234 recue",
-    time: "Il y a 5 min",
-    read: false,
-  },
-  {
-    id: "2",
-    title: "Reparation terminee",
-    message: "Reparation #567 prete a recuperer",
-    time: "Il y a 1h",
-    read: false,
-  },
-  {
-    id: "3",
-    title: "Nouveau client",
-    message: "Jean Dupont vient de s'inscrire",
-    time: "Il y a 3h",
-    read: true,
-  },
-];
+const initialNotifications: Notification[] = [];
 
 export function NotificationBell() {
   const [isOpen, setIsOpen] = useState(false);
-  const [notifications, setNotifications] = useState<Notification[]>(mockNotifications);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const unreadCount = notifications.filter((n) => !n.read).length;
