@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
-import { createClient } from "@/lib/supabase/server";
 
 const ADMIN_PASSWORD = "12512595";
 
@@ -23,27 +22,22 @@ export async function POST(request: NextRequest) {
       return setAdminCookie(NextResponse.json({ success: true }));
     }
 
-    // Method 2: Check if current Supabase user is admin
-    if (body.checkRole === true) {
+    // Method 2: Check by email - verify if this email has admin role in DB
+    if (body.email) {
       try {
-        const authClient = await createClient();
-        const { data: { user } } = await authClient.auth.getUser();
+        const serviceClient = createServiceClient();
+        const { data: profile } = await serviceClient
+          .from("profiles")
+          .select("role")
+          .eq("email", body.email.toLowerCase().trim())
+          .single();
 
-        if (user) {
-          const serviceClient = createServiceClient();
-          const { data: profile } = await serviceClient
-            .from("profiles")
-            .select("role")
-            .eq("id", user.id)
-            .single();
-
-          const role = (profile as { role: string } | null)?.role;
-          if (role && ["admin", "super_admin"].includes(role)) {
-            return setAdminCookie(NextResponse.json({ success: true }));
-          }
+        const role = (profile as { role: string } | null)?.role;
+        if (role && ["admin", "super_admin"].includes(role)) {
+          return setAdminCookie(NextResponse.json({ success: true }));
         }
       } catch {
-        // Supabase check failed, fall through
+        // DB check failed, fall through
       }
     }
 

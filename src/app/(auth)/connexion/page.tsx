@@ -38,7 +38,7 @@ function ConnexionForm() {
       const adminRes = await fetch("/api/admin/auth", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ checkRole: true }),
+        body: JSON.stringify({ email: email }),
       });
       const adminData = await adminRes.json();
       if (adminData.success) {
