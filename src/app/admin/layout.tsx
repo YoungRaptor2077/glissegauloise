@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { NotificationBell } from "@/components/admin/NotificationBell";
 import { User } from "lucide-react";
@@ -9,6 +11,45 @@ export default function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const router = useRouter();
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function checkAdmin() {
+      try {
+        const res = await fetch("/api/auth/me");
+        const data = await res.json();
+
+        if (!data.authenticated) {
+          router.push("/connexion");
+          return;
+        }
+
+        if (!data.role || !["admin", "super_admin"].includes(data.role)) {
+          router.push("/espace-client");
+          return;
+        }
+
+        setIsAdmin(true);
+      } catch {
+        router.push("/espace-client");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    checkAdmin();
+  }, [router]);
+
+  if (loading || !isAdmin) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-gris-anthracite">
+        <div className="animate-pulse text-blanc-casse/60">Chargement...</div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-screen overflow-hidden bg-gris-anthracite">
       <AdminSidebar />

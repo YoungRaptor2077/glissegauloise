@@ -54,7 +54,6 @@ export async function updateSession(request: NextRequest) {
 
   // No admin role check in middleware.
   // Admin pages are protected by their own API-level verifyAdmin() checks.
-  // This prevents the middleware from incorrectly blocking admin users.
 
   return supabaseResponse;
 }
