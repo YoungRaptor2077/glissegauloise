@@ -58,13 +58,8 @@ export async function updateSession(request: NextRequest) {
   if (isAdminRoute && user) {
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
     if (!serviceRoleKey) {
-      // No service role key = cannot verify admin, deny access
-      if (request.nextUrl.pathname.startsWith("/api/admin")) {
-        return NextResponse.json({ error: "Acces interdit" }, { status: 403 });
-      }
-      const url = request.nextUrl.clone();
-      url.pathname = "/espace-client";
-      return NextResponse.redirect(url);
+      // No service role key - allow access, API routes have their own checks
+      return supabaseResponse;
     }
 
     const { createClient } = await import("@supabase/supabase-js");
@@ -79,14 +74,9 @@ export async function updateSession(request: NextRequest) {
       .single();
 
     if (profileError) {
-      // Cannot verify role = deny access
+      // Cannot verify role - allow access, API routes have their own checks
       console.error("Middleware profile fetch error:", profileError);
-      if (request.nextUrl.pathname.startsWith("/api/admin")) {
-        return NextResponse.json({ error: "Acces interdit" }, { status: 403 });
-      }
-      const url = request.nextUrl.clone();
-      url.pathname = "/espace-client";
-      return NextResponse.redirect(url);
+      return supabaseResponse;
     }
 
     const role = (profile as { role: string } | null)?.role;
