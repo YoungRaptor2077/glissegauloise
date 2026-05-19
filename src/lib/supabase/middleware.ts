@@ -52,34 +52,28 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Admin role check: redirect non-admin users away from /admin routes
+  // Admin role check using the authenticated user's own session
   const isAdminRoute = request.nextUrl.pathname.startsWith("/admin") ||
     request.nextUrl.pathname.startsWith("/api/admin");
   if (isAdminRoute && user) {
-    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    if (!serviceRoleKey) {
-      // No service role key - allow access, API routes have their own checks
-      return supabaseResponse;
-    }
-
-    const { createClient } = await import("@supabase/supabase-js");
-    const serviceClient = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      serviceRoleKey
-    );
-    const { data: profile, error: profileError } = await serviceClient
+    // Read profile using the user's own authenticated session
+    const { data: profile, error: profileError } = await supabase
       .from("profiles")
       .select("role")
       .eq("id", user.id)
       .single();
 
-    if (profileError) {
-      // Cannot verify role - allow access, API routes have their own checks
-      console.error("Middleware profile fetch error:", profileError);
-      return supabaseResponse;
+    if (profileError || !profile) {
+      // Cannot verify role = deny access
+      if (request.nextUrl.pathname.startsWith("/api/admin")) {
+        return NextResponse.json({ error: "Acces interdit" }, { status: 403 });
+      }
+      const url = request.nextUrl.clone();
+      url.pathname = "/espace-client";
+      return NextResponse.redirect(url);
     }
 
-    const role = (profile as { role: string } | null)?.role;
+    const role = (profile as { role: string }).role;
     if (!role || !["admin", "super_admin"].includes(role)) {
       if (request.nextUrl.pathname.startsWith("/api/admin")) {
         return NextResponse.json(
