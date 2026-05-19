@@ -12,9 +12,9 @@ import type { Conversation, Message } from "@/types/database";
 interface ConversationWithPreview {
   id: string;
   subject: string;
-  status: "open" | "closed";
-  related_order_id: string | null;
-  related_repair_id: string | null;
+  status: "open" | "closed" | "archived";
+  type: "general" | "quote" | "repair" | "order" | "support";
+  related_id: string | null;
   created_at: string;
   lastMessage: string | null;
   lastMessageDate: string | null;
@@ -44,8 +44,9 @@ function formatRelativeDate(dateStr: string): string {
 }
 
 function getLinkedType(conv: ConversationWithPreview): string | null {
-  if (conv.related_repair_id) return "Reparation";
-  if (conv.related_order_id) return "Commande";
+  if (conv.type === "repair") return "Reparation";
+  if (conv.type === "order") return "Commande";
+  if (conv.type === "quote") return "Devis";
   return null;
 }
 
@@ -102,8 +103,8 @@ export default function MessagesPage() {
           id: conv.id,
           subject: conv.subject,
           status: conv.status,
-          related_order_id: conv.related_order_id,
-          related_repair_id: conv.related_repair_id,
+          type: conv.type,
+          related_id: conv.related_id,
           created_at: conv.created_at,
           lastMessage: lastMsg?.content || null,
           lastMessageDate: lastMsg?.created_at || conv.updated_at,

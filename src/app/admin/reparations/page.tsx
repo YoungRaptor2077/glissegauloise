@@ -7,47 +7,53 @@ import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import type { Repair, Profile } from "@/types/database";
 
-type RepairStatus = "all" | "pending" | "diagnosed" | "in_progress" | "completed" | "cancelled";
+type RepairStatus = "all" | "received" | "diagnostic" | "waiting_parts" | "in_progress" | "testing" | "completed" | "ready_pickup";
 
 interface RepairRow {
   id: string;
   rawId: string;
   client: string;
-  board: string;
+  equipment: string;
   brand: string;
   status: string;
   date: string;
   estimatedCost: number | null;
   description: string;
-  diagnosis: string | null;
+  adminNotes: string | null;
   [key: string]: unknown;
 }
 
 const statusLabels: Record<string, string> = {
-  pending: "En attente",
-  diagnosed: "Diagnostic",
+  received: "Recu",
+  diagnostic: "Diagnostic",
+  waiting_parts: "En attente pieces",
   in_progress: "En cours",
+  testing: "En test",
   completed: "Termine",
-  cancelled: "Annule",
+  ready_pickup: "Pret a recuperer",
 };
 
 const statusStyles: Record<string, string> = {
-  pending: "bg-yellow-500/10 text-yellow-400",
-  diagnosed: "bg-orange-500/10 text-orange-400",
+  received: "bg-yellow-500/10 text-yellow-400",
+  diagnostic: "bg-orange-500/10 text-orange-400",
+  waiting_parts: "bg-purple-500/10 text-purple-400",
   in_progress: "bg-blue-500/10 text-blue-400",
+  testing: "bg-cyan-500/10 text-cyan-400",
   completed: "bg-green-500/10 text-green-400",
-  cancelled: "bg-red-500/10 text-red-400",
+  ready_pickup: "bg-emerald-500/10 text-emerald-400",
 };
 
-const statusOrder = ["pending", "diagnosed", "in_progress", "completed", "cancelled"];
+const statusOrder = ["received", "diagnostic", "waiting_parts", "in_progress", "testing", "completed", "ready_pickup"];
 
 const tabs: { key: RepairStatus; label: string }[] = [
   { key: "all", label: "Toutes" },
-  { key: "pending", label: "En attente" },
-  { key: "diagnosed", label: "Diagnostic" },
+  { key: "received", label: "Recu" },
+  { key: "diagnostic", label: "Diagnostic" },
+  { key: "waiting_parts", label: "Attente pieces" },
   { key: "in_progress", label: "En cours" },
+  { key: "testing", label: "En test" },
   { key: "completed", label: "Terminees" },
-  { key: "cancelled", label: "Annulees" },
+  { key: "ready_pickup", label: "Pret a recuperer" },
 ];
 
 export default function ReparationsPage() {
@@ -86,13 +92,13 @@ export default function ReparationsPage() {
               id: r.id.substring(0, 8).toUpperCase(),
               rawId: r.id,
               client: profile?.full_name || "Client",
-              board: r.board_type,
+              equipment: [r.brand, r.model].filter(Boolean).join(" "),
               brand: r.brand || "",
               status: r.status,
               date: new Date(r.created_at).toLocaleDateString("fr-FR"),
               estimatedCost: r.estimated_cost,
-              description: r.description,
-              diagnosis: r.diagnosis,
+              description: r.issue_description,
+              adminNotes: r.admin_notes,
             };
           })
         );
@@ -130,7 +136,7 @@ export default function ReparationsPage() {
   const columns: Column<RepairRow>[] = [
     { key: "id", label: "ID", sortable: true },
     { key: "client", label: "Client", sortable: true },
-    { key: "board", label: "Type", sortable: true },
+    { key: "equipment", label: "Equipement", sortable: true },
     { key: "brand", label: "Marque", sortable: true },
     {
       key: "status",
@@ -244,7 +250,7 @@ export default function ReparationsPage() {
 
             <div className="rounded-xl border border-white/5 bg-noir-mat/50 p-4">
               <h3 className="text-sm font-medium text-blanc-casse/60 mb-2">Equipement</h3>
-              <p className="text-sm text-blanc-casse">{selectedRepair.brand} - {selectedRepair.board}</p>
+              <p className="text-sm text-blanc-casse">{selectedRepair.brand} - {selectedRepair.equipment}</p>
             </div>
 
             <div className="rounded-xl border border-white/5 bg-noir-mat/50 p-4">
@@ -252,10 +258,10 @@ export default function ReparationsPage() {
               <p className="text-sm text-blanc-casse">{selectedRepair.description}</p>
             </div>
 
-            {selectedRepair.diagnosis && (
+            {selectedRepair.adminNotes && (
               <div className="rounded-xl border border-white/5 bg-noir-mat/50 p-4">
-                <h3 className="text-sm font-medium text-blanc-casse/60 mb-2">Diagnostic</h3>
-                <p className="text-sm text-blanc-casse">{selectedRepair.diagnosis}</p>
+                <h3 className="text-sm font-medium text-blanc-casse/60 mb-2">Notes admin</h3>
+                <p className="text-sm text-blanc-casse">{selectedRepair.adminNotes}</p>
               </div>
             )}
 

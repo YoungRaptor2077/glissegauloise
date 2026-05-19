@@ -45,7 +45,7 @@ export async function GET() {
     const { count: repairCount } = await supabase
       .from("repairs")
       .select("*", { count: "exact", head: true })
-      .in("status", ["pending", "diagnosed", "in_progress"]);
+      .in("status", ["received", "diagnostic", "waiting_parts", "in_progress", "testing"]);
 
     // New clients this month
     const { count: clientCount } = await supabase
@@ -115,7 +115,7 @@ export async function GET() {
       recentRepairs = recentRepairsRaw.map((r: any) => ({
         id: r.id.substring(0, 8).toUpperCase(),
         client: (r.user_id && repairProfileMap[r.user_id]?.full_name) || "Client",
-        board: `${r.brand || ""} ${r.board_type}`.trim(),
+        board: `${r.brand || ""} ${r.model || ""}`.trim(),
         status: r.status,
         date: new Date(r.created_at).toLocaleDateString("fr-FR"),
       }));
