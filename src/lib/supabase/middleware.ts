@@ -33,12 +33,12 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
+  // Only check: is the user logged in for protected routes?
   const protectedPaths = ["/espace-client", "/admin", "/api/admin"];
   const isProtected = protectedPaths.some((path) =>
     request.nextUrl.pathname.startsWith(path)
   );
 
-  // If not logged in, redirect to login
   if (isProtected && !user) {
     if (request.nextUrl.pathname.startsWith("/api/")) {
       return NextResponse.json(
@@ -52,8 +52,8 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Admin role check is handled in the admin layout component
-  // The middleware only ensures the user is authenticated
+  // No admin role check in middleware.
+  // Admin pages are protected by their own API-level verifyAdmin() checks.
 
   return supabaseResponse;
 }
