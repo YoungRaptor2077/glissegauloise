@@ -32,6 +32,22 @@ export default function ConnexionPage() {
       return;
     }
 
+    // Check if user is admin to redirect appropriately
+    const { data: { user: loggedInUser } } = await supabase.auth.getUser();
+    if (loggedInUser) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", loggedInUser.id)
+        .single();
+
+      const role = (profile as { role: string } | null)?.role;
+      if (role && ["admin", "super_admin"].includes(role)) {
+        window.location.href = "/admin";
+        return;
+      }
+    }
+
     // Force full page reload to properly set auth cookies
     window.location.href = "/espace-client";
   }
