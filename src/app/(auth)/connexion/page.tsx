@@ -33,15 +33,20 @@ function ConnexionForm() {
       return;
     }
 
-    // Auto-admin for admin email
-    if (email.toLowerCase() === "gdrmathis15@gmail.com") {
-      await fetch("/api/admin/auth", {
+    // Check if user is admin via Supabase role
+    try {
+      const adminRes = await fetch("/api/admin/auth", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password: "12512595" }),
+        body: JSON.stringify({ checkRole: true }),
       });
-      window.location.href = "/admin";
-      return;
+      const adminData = await adminRes.json();
+      if (adminData.success) {
+        window.location.href = "/admin";
+        return;
+      }
+    } catch {
+      // Not admin or check failed, continue to espace-client
     }
 
     // Redirect to where the user wanted to go, or default to espace-client
