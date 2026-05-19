@@ -2,14 +2,12 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { AuthForm } from "@/components/auth/AuthForm";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { createClient } from "@/lib/supabase/client";
 
 export default function ConnexionPage() {
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -32,23 +30,18 @@ export default function ConnexionPage() {
       return;
     }
 
-    // Check if user is admin to redirect appropriately
-    const { data: { user: loggedInUser } } = await supabase.auth.getUser();
-    if (loggedInUser) {
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", loggedInUser.id)
-        .single();
-
-      const role = (profile as { role: string } | null)?.role;
-      if (role && ["admin", "super_admin"].includes(role)) {
+    // Use server-side API to check role (bypasses RLS)
+    try {
+      const res = await fetch("/api/auth/me");
+      const data = await res.json();
+      if (data.role === "admin" || data.role === "super_admin") {
         window.location.href = "/admin";
         return;
       }
+    } catch {
+      // If role check fails, default to espace-client
     }
 
-    // Force full page reload to properly set auth cookies
     window.location.href = "/espace-client";
   }
 
