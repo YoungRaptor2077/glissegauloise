@@ -59,8 +59,8 @@ export default function InscriptionPage() {
       return;
     }
 
-    router.push("/espace-client");
-    router.refresh();
+    // Force full page reload to properly set auth cookies
+    window.location.href = "/espace-client";
   }
 
   return (
