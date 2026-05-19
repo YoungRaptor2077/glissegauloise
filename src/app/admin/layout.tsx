@@ -30,13 +30,13 @@ export default function AdminLayout({
         const data = await res.json();
 
         if (!data.authenticated) {
-          window.location.href = "/admin/login";
+          window.location.href = "/";
           return;
         }
 
         setIsAuthenticated(true);
       } catch {
-        window.location.href = "/admin/login";
+        window.location.href = "/";
       } finally {
         setLoading(false);
       }

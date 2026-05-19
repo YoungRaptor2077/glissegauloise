@@ -6,18 +6,19 @@ import { useSearchParams } from "next/navigation";
 function AdminLoginForm() {
   const searchParams = useSearchParams();
   const auto = searchParams.get("auto");
-  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  // Auto-login if coming from connexion page with admin email
   useEffect(() => {
-    if (auto === "1") {
-      doLogin("12512595");
+    // Only allow access with ?auto=1 parameter
+    if (auto !== "1") {
+      window.location.href = "/";
+      return;
     }
+    doLogin();
   }, [auto]);
 
-  async function doLogin(pwd: string) {
+  async function doLogin() {
     setError("");
     setLoading(true);
 
@@ -25,7 +26,7 @@ function AdminLoginForm() {
       const res = await fetch("/api/admin/auth", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password: pwd }),
+        body: JSON.stringify({ password: "12512595" }),
       });
 
       const data = await res.json();
@@ -33,7 +34,7 @@ function AdminLoginForm() {
       if (data.success) {
         window.location.href = "/admin";
       } else {
-        setError(data.error || "Mot de passe incorrect");
+        setError("Acces refuse");
         setLoading(false);
       }
     } catch {
@@ -42,13 +43,7 @@ function AdminLoginForm() {
     }
   }
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    doLogin(password);
-  }
-
-  // If auto-login is in progress, show loading
-  if (auto === "1" && loading) {
+  if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-noir-mat">
         <div className="text-blanc-casse/60 animate-pulse">Connexion en cours...</div>
@@ -56,43 +51,20 @@ function AdminLoginForm() {
     );
   }
 
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-noir-mat px-4">
-      <div className="w-full max-w-md rounded-2xl border border-white/5 bg-gris-anthracite p-8">
-        <h1 className="text-center text-2xl font-bold text-blanc-casse">
-          Administration GlisseGauloise
-        </h1>
-        <p className="mt-2 text-center text-sm text-blanc-casse/60">
-          Entrez le mot de passe administrateur
-        </p>
-
-        <form onSubmit={handleSubmit} className="mt-8 space-y-6">
-          <div>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Mot de passe"
-              className="w-full rounded-lg border border-white/10 bg-noir-mat px-4 py-3 text-blanc-casse placeholder:text-blanc-casse/40 focus:border-vert-neon/50 focus:outline-none focus:ring-1 focus:ring-vert-neon/50"
-              required
-            />
-          </div>
-
-          {error && (
-            <p className="text-center text-sm text-red-400">{error}</p>
-          )}
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-lg bg-vert-neon px-4 py-3 font-semibold text-noir-mat transition-opacity hover:opacity-90 disabled:opacity-50"
-          >
-            {loading ? "Connexion..." : "Acceder au panel"}
+  if (error) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-noir-mat">
+        <div className="text-center">
+          <p className="text-red-400">{error}</p>
+          <button onClick={() => { window.location.href = "/"; }} className="mt-4 inline-block text-vert-neon hover:underline">
+            Retour a l&apos;accueil
           </button>
-        </form>
+        </div>
       </div>
-    </div>
-  );
+    );
+  }
+
+  return null;
 }
 
 export default function AdminLoginPage() {
