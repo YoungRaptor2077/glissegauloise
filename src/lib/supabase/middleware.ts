@@ -33,28 +33,18 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Only check: is the user logged in for protected routes?
-  const protectedPaths = ["/espace-client", "/admin", "/api/admin"];
+  // Only protect espace-client routes with Supabase auth
+  const protectedPaths = ["/espace-client"];
   const isProtected = protectedPaths.some((path) =>
     request.nextUrl.pathname.startsWith(path)
   );
 
   if (isProtected && !user) {
-    if (request.nextUrl.pathname.startsWith("/api/")) {
-      return NextResponse.json(
-        { error: "Non autorise" },
-        { status: 401 }
-      );
-    }
     const url = request.nextUrl.clone();
     url.pathname = "/connexion";
     url.searchParams.set("redirect", request.nextUrl.pathname);
     return NextResponse.redirect(url);
   }
-
-  // No admin role check in middleware.
-  // Admin pages are protected by their own API-level verifyAdmin() checks.
-  // This prevents the middleware from incorrectly blocking admin users.
 
   return supabaseResponse;
 }
