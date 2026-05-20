@@ -19,6 +19,7 @@ const statusConfig: Record<string, { label: string; variant: BadgeVariant }> = {
   testing: { label: "En test", variant: "neon" },
   completed: { label: "Terminee", variant: "success" },
   ready_pickup: { label: "Pret a recuperer", variant: "success" },
+  closed: { label: "Terminee", variant: "default" },
 };
 
 const timelineSteps = ["received", "diagnostic", "waiting_parts", "in_progress", "testing", "completed", "ready_pickup"];
@@ -141,8 +142,10 @@ export default function ReparationsPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, delay: index * 0.05 }}
                 className={`p-5 border rounded-2xl transition-all ${
-                  repair.status === "ready_pickup" 
-                    ? "bg-gris-anthracite/50 border-white/5 opacity-70" 
+                  repair.status === "closed"
+                    ? "bg-gris-anthracite/30 border-white/5 opacity-50"
+                    : repair.status === "ready_pickup"
+                    ? "bg-gris-anthracite/50 border-white/5 opacity-70"
                     : "bg-gris-anthracite border-white/5"
                 }`}
               >
@@ -166,7 +169,12 @@ export default function ReparationsPage() {
                       <p className="text-sm text-blanc-casse/70 mt-2">
                         {repair.issue_description}
                       </p>
-                      {repair.status === "ready_pickup" ? (
+                      {repair.status === "closed" ? (
+                        <div className="flex items-center gap-2 mt-3">
+                          <CheckCircle2 size={14} className="text-gray-400" />
+                          <span className="text-xs font-medium text-gray-400">Reparation terminee et notee</span>
+                        </div>
+                      ) : repair.status === "ready_pickup" ? (
                         <div className="flex items-center gap-2 mt-3">
                           <CheckCircle2 size={14} className="text-green-400" />
                           <span className="text-xs font-medium text-green-400">Reparation terminee - Pret a recuperer</span>
@@ -188,9 +196,9 @@ export default function ReparationsPage() {
                     >
                       <MessageSquare className="h-4 w-4" />
                     </Link>
-                    {(repair.status === "completed" || repair.status === "ready_pickup") && (
+                    {repair.status === "ready_pickup" && (
                       <Link
-                        href="/avis"
+                        href={`/avis?repair_id=${repair.id}`}
                         className="px-3 py-1.5 rounded-lg bg-yellow-500/10 text-xs font-medium text-yellow-400 hover:bg-yellow-500/20 transition-colors"
                       >
                         ⭐ Donner votre avis

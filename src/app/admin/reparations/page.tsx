@@ -3,12 +3,12 @@
 import React from "react";
 import { useState, useEffect } from "react";
 import { DataTable, type Column } from "@/components/admin/DataTable";
-import { X, Trash2, Inbox, Search, Package, Wrench, FlaskConical, CheckCircle, Hand } from "lucide-react";
+import { X, Trash2, Inbox, Search, Package, Wrench, FlaskConical, CheckCircle, Hand, Lock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import type { Repair, Profile } from "@/types/database";
 
-type RepairStatus = "all" | "received" | "diagnostic" | "waiting_parts" | "in_progress" | "testing" | "completed" | "ready_pickup";
+type RepairStatus = "all" | "received" | "diagnostic" | "waiting_parts" | "in_progress" | "testing" | "completed" | "ready_pickup" | "closed";
 
 interface RepairRow {
   id: string;
@@ -37,6 +37,7 @@ const statusLabels: Record<string, string> = {
   testing: "En test",
   completed: "Termine",
   ready_pickup: "Pret a recuperer",
+  closed: "Termine (note)",
 };
 
 const statusStyles: Record<string, string> = {
@@ -47,6 +48,7 @@ const statusStyles: Record<string, string> = {
   testing: "bg-cyan-500/10 text-cyan-400",
   completed: "bg-green-500/10 text-green-400",
   ready_pickup: "bg-emerald-500/10 text-emerald-400",
+  closed: "bg-gray-500/10 text-gray-400",
 };
 
 const statusIcons: Record<string, React.ReactNode> = {
@@ -57,9 +59,10 @@ const statusIcons: Record<string, React.ReactNode> = {
   testing: <FlaskConical size={14} className="text-purple-400" />,
   completed: <CheckCircle size={14} className="text-green-400" />,
   ready_pickup: <Hand size={14} className="text-cyan-400" />,
+  closed: <Lock size={14} className="text-gray-400" />,
 };
 
-const statusOrder = ["received", "diagnostic", "waiting_parts", "in_progress", "testing", "completed", "ready_pickup"];
+const statusOrder = ["received", "diagnostic", "waiting_parts", "in_progress", "testing", "completed", "ready_pickup", "closed"];
 
 const tabs: { key: RepairStatus; label: string }[] = [
   { key: "all", label: "Toutes" },
@@ -70,7 +73,61 @@ const tabs: { key: RepairStatus; label: string }[] = [
   { key: "testing", label: "En test" },
   { key: "completed", label: "Terminees" },
   { key: "ready_pickup", label: "Pret a recuperer" },
+  { key: "closed", label: "Terminees (notees)" },
 ];
+
+function ClientReviewSection({ repairId }: { repairId: string }) {
+  const [review, setReview] = useState<{ rating: number; comment: string | null; created_at: string } | null>(null);
+  const [loadingReview, setLoadingReview] = useState(true);
+
+  useEffect(() => {
+    async function fetchReview() {
+      try {
+        const res = await fetch(`/api/reviews?repair_id=${repairId}`);
+        const data = await res.json();
+        setReview(data.review);
+      } catch {}
+      setLoadingReview(false);
+    }
+    fetchReview();
+  }, [repairId]);
+
+  if (loadingReview) {
+    return (
+      <div className="rounded-xl border border-white/5 bg-noir-mat/50 p-4">
+        <h3 className="text-sm font-medium text-blanc-casse/60 mb-2">Note du client</h3>
+        <p className="text-xs text-blanc-casse/30">Chargement...</p>
+      </div>
+    );
+  }
+
+  if (!review) {
+    return (
+      <div className="rounded-xl border border-white/5 bg-noir-mat/50 p-4">
+        <h3 className="text-sm font-medium text-blanc-casse/60 mb-2">Note du client</h3>
+        <p className="text-xs text-blanc-casse/30">Pas encore note</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-xl border border-yellow-500/20 bg-yellow-500/5 p-4">
+      <h3 className="text-sm font-medium text-yellow-400 mb-2">Note du client</h3>
+      <div className="flex gap-0.5 mb-2">
+        {[1,2,3,4,5].map(s => (
+          <span key={s} className={s <= review.rating ? "text-yellow-400" : "text-white/20"}>★</span>
+        ))}
+        <span className="ml-2 text-sm font-bold text-blanc-casse">{review.rating}/5</span>
+      </div>
+      {review.comment && (
+        <p className="text-sm text-blanc-casse/70 italic">&quot;{review.comment}&quot;</p>
+      )}
+      <p className="text-xs text-blanc-casse/40 mt-2">
+        {new Date(review.created_at).toLocaleDateString("fr-FR")}
+      </p>
+    </div>
+  );
+}
 
 export default function ReparationsPage() {
   const [activeTab, setActiveTab] = useState<RepairStatus>("all");
@@ -451,8 +508,16 @@ export default function ReparationsPage() {
               </div>
             </div>
 
+            {/* Client Review */}
+            <ClientReviewSection repairId={selectedRepair.rawId} />
+
             <div className="pt-4 border-t border-white/5 space-y-3">
-              {selectedRepair.status !== "ready_pickup" && selectedRepair.status !== "completed" && (
+              {selectedRepair.status === "closed" && (
+                <div className="text-center py-2">
+                  <p className="text-xs text-gray-400 font-medium">Reparation terminee definitivement</p>
+                </div>
+              )}
+              {selectedRepair.status !== "ready_pickup" && selectedRepair.status !== "completed" && selectedRepair.status !== "closed" && (
                 <button
                   onClick={() => handleStatusChange(selectedRepair.rawId, "completed")}
                   className="w-full rounded-xl bg-green-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-green-600 transition-colors"
@@ -468,12 +533,22 @@ export default function ReparationsPage() {
                   Pret a recuperer
                 </button>
               )}
-              <button
-                onClick={() => handleDelete(selectedRepair.rawId)}
-                className="w-full rounded-xl border border-red-500/30 px-4 py-2.5 text-sm font-medium text-red-400 hover:bg-red-500/10 transition-colors"
-              >
-                Supprimer la reparation
-              </button>
+              {selectedRepair.status === "ready_pickup" && (
+                <button
+                  onClick={() => handleStatusChange(selectedRepair.rawId, "closed")}
+                  className="w-full rounded-xl bg-gray-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-gray-600 transition-colors"
+                >
+                  Terminer definitivement
+                </button>
+              )}
+              {selectedRepair.status !== "closed" && (
+                <button
+                  onClick={() => handleDelete(selectedRepair.rawId)}
+                  className="w-full rounded-xl border border-red-500/30 px-4 py-2.5 text-sm font-medium text-red-400 hover:bg-red-500/10 transition-colors"
+                >
+                  Supprimer la reparation
+                </button>
+              )}
             </div>
           </div>
         </div>

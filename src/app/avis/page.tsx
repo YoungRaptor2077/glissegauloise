@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { Star, ThumbsUp } from "lucide-react";
 import Link from "next/link";
@@ -13,6 +14,8 @@ const CRITERIA = [
 ];
 
 export default function AvisPage() {
+  const searchParams = useSearchParams();
+  const repairId = searchParams.get("repair_id");
   const [ratings, setRatings] = useState<Record<string, number>>({});
   const [hoveredStars, setHoveredStars] = useState<Record<string, number>>({});
   const [comment, setComment] = useState("");
@@ -40,6 +43,7 @@ export default function AvisPage() {
           comment,
           criteria: ratings,
           recommend,
+          repair_id: repairId,
         }),
       });
     } catch {
