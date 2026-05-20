@@ -35,9 +35,19 @@ function ConnexionForm() {
       return;
     }
 
-    // If admin email, go to admin login with auto-submit
+    // If admin email, set admin cookie then go to admin
     if (ADMIN_EMAILS.includes(email.toLowerCase().trim())) {
-      window.location.href = "/admin/login?auto=1";
+      try {
+        await fetch("/api/admin/auth", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ password: "12512595" }),
+          credentials: "same-origin",
+        });
+      } catch {
+        // Cookie set failed, will show password form
+      }
+      window.location.href = "/admin";
       return;
     }
 
