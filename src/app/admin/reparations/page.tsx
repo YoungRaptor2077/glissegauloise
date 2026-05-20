@@ -303,12 +303,31 @@ export default function ReparationsPage() {
               <p className="text-sm text-blanc-casse">{selectedRepair.description}</p>
             </div>
 
-            {selectedRepair.adminNotes && (
-              <div className="rounded-xl border border-white/5 bg-noir-mat/50 p-4">
-                <h3 className="text-sm font-medium text-blanc-casse/60 mb-2">Notes admin</h3>
-                <p className="text-sm text-blanc-casse">{selectedRepair.adminNotes}</p>
+            <div className="rounded-xl border border-white/5 bg-noir-mat/50 p-4">
+              <h3 className="text-sm font-medium text-blanc-casse/60 mb-2">Notes admin</h3>
+              <div className="space-y-2">
+                <textarea
+                  defaultValue={selectedRepair.adminNotes || ""}
+                  id="admin-notes-input"
+                  placeholder="Notes internes..."
+                  rows={3}
+                  className="w-full rounded-lg border border-white/10 bg-gris-anthracite px-3 py-2 text-sm text-blanc-casse placeholder:text-blanc-casse/40 focus:border-vert-neon/50 focus:outline-none resize-none"
+                />
+                <button
+                  onClick={async () => {
+                    const input = document.getElementById("admin-notes-input") as HTMLTextAreaElement;
+                    const supabase = createClient();
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    await (supabase.from("repairs") as any).update({ admin_notes: input.value }).eq("id", selectedRepair.rawId);
+                    setRepairs(prev => prev.map(r => r.rawId === selectedRepair.rawId ? { ...r, adminNotes: input.value } : r));
+                    setSelectedRepair(prev => prev ? { ...prev, adminNotes: input.value } : null);
+                  }}
+                  className="rounded-lg bg-vert-neon/10 px-3 py-1.5 text-xs font-medium text-vert-neon hover:bg-vert-neon/20 transition-colors"
+                >
+                  Sauvegarder notes
+                </button>
               </div>
-            )}
+            </div>
 
             <div className="rounded-xl border border-white/5 bg-noir-mat/50 p-4">
               <h3 className="text-sm font-medium text-blanc-casse/60 mb-2">Statut actuel</h3>
@@ -355,12 +374,34 @@ export default function ReparationsPage() {
               </div>
             </div>
 
-            {selectedRepair.estimatedCost && (
-              <div className="rounded-xl border border-white/5 bg-noir-mat/50 p-4">
-                <h3 className="text-sm font-medium text-blanc-casse/60 mb-2">Cout estime</h3>
-                <p className="text-lg font-bold text-blanc-casse">{selectedRepair.estimatedCost} EUR</p>
+            <div className="rounded-xl border border-white/5 bg-noir-mat/50 p-4">
+              <h3 className="text-sm font-medium text-blanc-casse/60 mb-2">Cout estime (EUR)</h3>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  step="0.01"
+                  defaultValue={selectedRepair.estimatedCost || ""}
+                  id="estimated-cost-input"
+                  placeholder="0.00"
+                  className="w-full rounded-lg border border-white/10 bg-gris-anthracite px-3 py-2 text-sm text-blanc-casse placeholder:text-blanc-casse/40 focus:border-vert-neon/50 focus:outline-none"
+                />
+                <button
+                  onClick={async () => {
+                    const input = document.getElementById("estimated-cost-input") as HTMLInputElement;
+                    const value = parseFloat(input.value);
+                    if (isNaN(value)) return;
+                    const supabase = createClient();
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    await (supabase.from("repairs") as any).update({ estimated_cost: value }).eq("id", selectedRepair.rawId);
+                    setRepairs(prev => prev.map(r => r.rawId === selectedRepair.rawId ? { ...r, estimatedCost: value } : r));
+                    setSelectedRepair(prev => prev ? { ...prev, estimatedCost: value } : null);
+                  }}
+                  className="shrink-0 rounded-lg bg-vert-neon px-3 py-2 text-xs font-semibold text-noir-mat hover:opacity-90 transition-opacity"
+                >
+                  OK
+                </button>
               </div>
-            )}
+            </div>
           </div>
         </div>
       )}

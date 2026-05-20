@@ -1,8 +1,9 @@
 "use client";
 
+import React from "react";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Wrench, MessageSquare } from "lucide-react";
+import { Wrench, MessageSquare, Inbox, Search, Package, FlaskConical, CheckCircle2, Hand } from "lucide-react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/Badge";
 import type { BadgeVariant } from "@/components/ui/Badge";
@@ -22,6 +23,16 @@ const statusConfig: Record<string, { label: string; variant: BadgeVariant }> = {
 
 const timelineSteps = ["received", "diagnostic", "waiting_parts", "in_progress", "testing", "completed", "ready_pickup"];
 
+const timelineIcons: Record<string, React.ReactNode> = {
+  received: <Inbox size={10} />,
+  diagnostic: <Search size={10} />,
+  waiting_parts: <Package size={10} />,
+  in_progress: <Wrench size={10} />,
+  testing: <FlaskConical size={10} />,
+  completed: <CheckCircle2 size={10} />,
+  ready_pickup: <Hand size={10} />,
+};
+
 function RepairTimeline({ currentStatus }: { currentStatus: string }) {
   const currentIndex = timelineSteps.indexOf(currentStatus);
 
@@ -30,13 +41,16 @@ function RepairTimeline({ currentStatus }: { currentStatus: string }) {
       {timelineSteps.map((step, index) => (
         <div key={step} className="flex items-center">
           <div
-            className={`h-2 w-2 rounded-full ${
-              index <= currentIndex ? "bg-vert-neon" : "bg-white/20"
+            className={`flex items-center justify-center h-5 w-5 rounded-full ${
+              index <= currentIndex ? "bg-vert-neon/20 text-vert-neon" : "bg-white/10 text-white/30"
             }`}
-          />
+            title={statusConfig[step]?.label || step}
+          >
+            {timelineIcons[step]}
+          </div>
           {index < timelineSteps.length - 1 && (
             <div
-              className={`h-0.5 w-6 ${
+              className={`h-0.5 w-4 ${
                 index < currentIndex ? "bg-vert-neon" : "bg-white/10"
               }`}
             />
