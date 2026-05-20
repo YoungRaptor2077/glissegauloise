@@ -216,6 +216,7 @@ export default function ReparationsPage() {
             title: "Reparation mise a jour",
             message: `Votre reparation est maintenant : ${statusLabels[newStatus] || newStatus}`,
             type: "repair_update",
+            status_key: newStatus,
             link: "/espace-client/reparations",
           }),
         });

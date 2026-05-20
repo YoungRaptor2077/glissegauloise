@@ -32,12 +32,14 @@ export async function sendRepairReceivedEmail(to: string, clientName: string) {
 export async function sendRepairStatusEmail(to: string, clientName: string, status: string) {
   if (!resend) return;
   const statusMessages: Record<string, string> = {
+    received: "Votre demande de reparation a ete prise en compte.",
     diagnostic: "Votre trottinette est en cours de diagnostic.",
     waiting_parts: "Nous attendons les pieces necessaires pour votre reparation.",
     in_progress: "La reparation de votre trottinette est en cours.",
     testing: "Votre trottinette est en phase de test.",
     completed: "La reparation de votre trottinette est terminee !",
     ready_pickup: "Votre trottinette est prete a etre recuperee !",
+    closed: "Votre reparation est terminee. Merci de votre confiance !",
   };
 
   const message = statusMessages[status] || `Le statut de votre reparation a ete mis a jour : ${status}`;

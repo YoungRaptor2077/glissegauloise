@@ -13,34 +13,29 @@ export async function POST(request: NextRequest) {
 
     const supabase = createServiceClient();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase.from("notifications") as any)
+    await (supabase.from("notifications") as any)
       .insert({
         user_id,
         title,
         message,
         type: type || "info",
         link: link || null,
-        read: false,
+        is_read: false,
       });
 
-    if (error) {
-      return NextResponse.json({ error: "Erreur lors de la creation" }, { status: 500 });
-    }
-
-    // Send email for repair updates
-    if (body.type === "repair_update" && body.user_id) {
+    // Send email for repair updates (always, even if notification insert fails)
+    if (type === "repair_update" && user_id) {
       try {
-        const { data: profile } = await supabase
-          .from("profiles")
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: profile } = await (supabase.from("profiles") as any)
           .select("email, full_name")
-          .eq("id", body.user_id)
+          .eq("id", user_id)
           .single();
 
         if (profile?.email) {
-          // Extract status from the message (format: "Votre reparation est maintenant : STATUS")
-          const statusMatch = body.message?.match(/: (.+)$/);
-          const status = statusMatch ? statusMatch[1] : "";
-          sendRepairStatusEmail(profile.email, (profile as { full_name?: string }).full_name || "", status);
+          // Pass the raw status key from the body (added by the admin page)
+          const statusKey = body.status_key || "";
+          sendRepairStatusEmail(profile.email, profile.full_name || "", statusKey);
         }
       } catch {
         // Email failed, non-blocking
