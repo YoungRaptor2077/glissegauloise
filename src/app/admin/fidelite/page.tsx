@@ -43,10 +43,11 @@ export default function AdminFidelitePage() {
           reward_percent: rewardPercent,
         }),
       });
-      if (res.ok) {
+      const data = await res.json();
+      if (res.ok && data.success) {
         setFeedback({ type: "success", message: "Parametres sauvegardes avec succes" });
       } else {
-        setFeedback({ type: "error", message: "Erreur lors de la sauvegarde" });
+        setFeedback({ type: "error", message: data.error || "Erreur lors de la sauvegarde (status " + res.status + ")" });
       }
     } catch {
       setFeedback({ type: "error", message: "Erreur de connexion" });
