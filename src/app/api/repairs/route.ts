@@ -86,7 +86,17 @@ export async function POST(request: NextRequest) {
     // Send confirmation email
     const userEmail = body.email || null;
     if (userEmail) {
-      sendRepairReceivedEmail(userEmail, body.marque + " " + (body.modele || ""));
+      // Get client name from profile if authenticated
+      let clientName = "";
+      if (userId) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("full_name")
+          .eq("id", userId)
+          .single();
+        clientName = (profile as { full_name: string } | null)?.full_name || "";
+      }
+      sendRepairReceivedEmail(userEmail, clientName);
     }
 
     // Try to create conversation if user is authenticated (non-blocking)
