@@ -76,12 +76,19 @@ export default function InscriptionPage() {
           type="button"
           onClick={async () => {
             const supabase = createClient();
-            await supabase.auth.signInWithOAuth({
+            const { data, error: oauthError } = await supabase.auth.signInWithOAuth({
               provider: "google",
               options: {
                 redirectTo: "https://glissegauloise.vercel.app/espace-client",
               },
             });
+            if (oauthError) {
+              alert("Erreur Google: " + oauthError.message);
+              return;
+            }
+            if (data?.url) {
+              window.location.href = data.url;
+            }
           }}
           className="w-full flex items-center justify-center gap-3 rounded-xl border border-white/10 bg-white px-4 py-3 text-sm font-medium text-gray-800 hover:bg-gray-50 transition-colors"
         >
