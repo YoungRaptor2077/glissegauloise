@@ -402,6 +402,31 @@ export default function ReparationsPage() {
                 </button>
               </div>
             </div>
+
+            <div className="pt-4 border-t border-white/5 space-y-3">
+              {selectedRepair.status !== "ready_pickup" && selectedRepair.status !== "completed" && (
+                <button
+                  onClick={() => handleStatusChange(selectedRepair.rawId, "completed")}
+                  className="w-full rounded-xl bg-green-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-green-600 transition-colors"
+                >
+                  Marquer comme termine
+                </button>
+              )}
+              {selectedRepair.status === "completed" && (
+                <button
+                  onClick={() => handleStatusChange(selectedRepair.rawId, "ready_pickup")}
+                  className="w-full rounded-xl bg-cyan-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-cyan-600 transition-colors"
+                >
+                  Pret a recuperer
+                </button>
+              )}
+              <button
+                onClick={() => handleDelete(selectedRepair.rawId)}
+                className="w-full rounded-xl border border-red-500/30 px-4 py-2.5 text-sm font-medium text-red-400 hover:bg-red-500/10 transition-colors"
+              >
+                Supprimer la reparation
+              </button>
+            </div>
           </div>
         </div>
       )}

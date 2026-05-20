@@ -179,6 +179,14 @@ export default function ReparationsPage() {
                     >
                       <MessageSquare className="h-4 w-4" />
                     </Link>
+                    {(repair.status === "completed" || repair.status === "ready_pickup") && (
+                      <Link
+                        href="/avis"
+                        className="px-3 py-1.5 rounded-lg bg-yellow-500/10 text-xs font-medium text-yellow-400 hover:bg-yellow-500/20 transition-colors"
+                      >
+                        ⭐ Donner votre avis
+                      </Link>
+                    )}
                   </div>
                 </div>
               </motion.div>

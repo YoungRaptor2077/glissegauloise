@@ -13,6 +13,7 @@ interface MessageItem {
   id: string;
   content: string;
   sender_id: string;
+  is_admin: boolean;
   is_read: boolean;
   created_at: string;
 }
@@ -41,7 +42,6 @@ export default function ConversationDetailPage() {
   const [conversation, setConversation] = useState<ConversationInfo | null>(
     null
   );
-  const [userId, setUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [unauthorized, setUnauthorized] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -87,16 +87,6 @@ export default function ConversationDetailPage() {
         const data = await res.json();
         setConversation(data.conversation);
         setMessages(data.messages || []);
-
-        // Extract user ID from messages (sender that is not admin)
-        if (data.messages && data.messages.length > 0) {
-          const clientMsg = data.messages.find(
-            (m: MessageItem & { is_admin?: boolean }) => !m.is_admin
-          );
-          if (clientMsg) {
-            setUserId(clientMsg.sender_id);
-          }
-        }
       } catch (err) {
         console.error("Error fetching conversation:", err);
       } finally {
@@ -148,9 +138,6 @@ export default function ConversationDetailPage() {
               if (prev.some((m) => m.id === data.message.id)) return prev;
               return [...prev, data.message];
             });
-            if (!userId) {
-              setUserId(data.message.sender_id);
-            }
           }
         } else {
           setError("Erreur lors de l'envoi du message.");
@@ -159,7 +146,7 @@ export default function ConversationDetailPage() {
         setError("Erreur lors de l'envoi du message.");
       }
     },
-    [conversationId, userId]
+    [conversationId]
   );
 
   if (loading) {
@@ -239,10 +226,8 @@ export default function ConversationDetailPage() {
             key={msg.id}
             content={msg.content}
             timestamp={formatTimestamp(msg.created_at)}
-            isSent={msg.sender_id === userId}
-            senderName={
-              msg.sender_id !== userId ? "GlisseGauloise" : undefined
-            }
+            isSent={!msg.is_admin}
+            senderName={msg.is_admin ? "GlisseGauloise" : undefined}
             isRead={msg.is_read}
           />
         ))}
