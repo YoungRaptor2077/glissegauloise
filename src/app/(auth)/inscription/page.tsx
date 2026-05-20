@@ -79,7 +79,7 @@ export default function InscriptionPage() {
             const { data, error: oauthError } = await supabase.auth.signInWithOAuth({
               provider: "google",
               options: {
-                redirectTo: "https://glissegauloise.vercel.app/auth/callback?redirect=/espace-client",
+                redirectTo: "https://glissegauloisse.com/auth/callback?redirect=/espace-client",
               },
             });
             if (oauthError) {

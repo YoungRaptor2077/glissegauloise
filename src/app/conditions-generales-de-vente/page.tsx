@@ -24,7 +24,7 @@ export default function CGVPage() {
           <p>
             Les presentes Conditions Generales de Vente (CGV) regissent les
             ventes de produits et services effectuees par GlisseGauloisse EI
-            (SIRET 99370901300011) via le site internet glissegauloisse.fr.
+            (SIRET 99370901300011) via le site internet glissegauloisse.com.
             Toute commande implique l&apos;acceptation sans reserve des presentes CGV.
           </p>
         </section>

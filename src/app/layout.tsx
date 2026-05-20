@@ -15,7 +15,7 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL || "https://glissegauloisse.fr"
+    process.env.NEXT_PUBLIC_SITE_URL || "https://glissegauloisse.com"
   ),
   title: {
     default: "GlisseGauloisse | Reparation Trottinette Electrique Eaubonne 95",
@@ -54,7 +54,7 @@ export const metadata: Metadata = {
     },
   },
   alternates: {
-    canonical: "https://glissegauloisse.fr",
+    canonical: "https://glissegauloisse.com",
   },
   openGraph: {
     title: "GlisseGauloisse | Reparation Trottinette Electrique Eaubonne 95",
@@ -63,7 +63,7 @@ export const metadata: Metadata = {
     type: "website",
     locale: "fr_FR",
     siteName: "GlisseGauloisse",
-    url: "https://glissegauloisse.fr",
+    url: "https://glissegauloisse.com",
   },
   twitter: {
     card: "summary_large_image",
@@ -90,7 +90,7 @@ export default function RootLayout({
               "name": "GlisseGauloisse",
               "alternateName": ["Glisse Gauloisse", "GlisseGauloise", "Glisse Gauloise"],
               "description": "Expert en reparation de trottinettes electriques a Eaubonne (95600). Diagnostic, reparation batterie, pneus, freins, controleurs. Toutes marques: Dualtron, Kaabo, Xiaomi, Nami, Vsett.",
-              "url": "https://glissegauloisse.fr",
+              "url": "https://glissegauloisse.com",
               "telephone": "+33786757963",
               "email": "GlisseGauloisse.Service@outlook.fr",
               "address": {
@@ -139,7 +139,7 @@ export default function RootLayout({
                 "reviewCount": "10"
               },
               "priceRange": "$$",
-              "image": "https://glissegauloisse.fr/og-image.png",
+              "image": "https://glissegauloisse.com/og-image.png",
               "sameAs": [
                 "https://www.instagram.com/glissegauloisse/",
                 "https://www.tiktok.com/@glissegauloisse"
@@ -154,7 +154,7 @@ export default function RootLayout({
               "@context": "https://schema.org",
               "@type": "WebSite",
               "name": "GlisseGauloisse",
-              "url": "https://glissegauloisse.fr",
+              "url": "https://glissegauloisse.com",
               "potentialAction": {
                 "@type": "SearchAction",
                 "target": "https://glissegauloisse.fr/boutique?search={search_term_string}",
