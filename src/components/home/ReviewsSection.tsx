@@ -1,47 +1,35 @@
 "use client";
 
 import { motion, useInView } from "framer-motion";
-import { useRef } from "react";
+import { useRef, useState, useEffect } from "react";
 import { Star, Quote } from "lucide-react";
 
-const reviews = [
-  {
-    name: "Thomas D.",
-    rating: 5,
-    text: "Reparation impeccable de ma Dualtron Thunder. Le diagnostic etait precis et la reparation rapide. Je recommande vivement !",
-    date: "Il y a 2 semaines",
-  },
-  {
-    name: "Sophie M.",
-    rating: 5,
-    text: "Excellent service ! Ma Xiaomi Pro 2 avait un probleme de batterie, repare en 24h. Tres professionnel.",
-    date: "Il y a 1 mois",
-  },
-  {
-    name: "Lucas R.",
-    rating: 5,
-    text: "Atelier tres bien equipe. Changement de pneus et plaquettes de frein en moins d'une heure. Prix tres corrects.",
-    date: "Il y a 3 semaines",
-  },
-  {
-    name: "Marie L.",
-    rating: 4,
-    text: "Bon accueil et conseils pertinents. Ma Kaabo Mantis est comme neuve apres l'entretien complet.",
-    date: "Il y a 2 mois",
-  },
-  {
-    name: "Antoine B.",
-    rating: 5,
-    text: "Depannage rapide pour mon Vsett 10+. Probleme de controleur identifie et remplace le jour meme. Top !",
-    date: "Il y a 1 semaine",
-  },
-  {
-    name: "Camille P.",
-    rating: 5,
-    text: "Service au top, pieces de qualite et travail soigne. Mon Nami Burn-E roule mieux qu'au premier jour.",
-    date: "Il y a 1 mois",
-  },
-];
+interface Review {
+  name: string;
+  rating: number;
+  text: string;
+  date: string;
+}
+
+function formatRelativeDate(dateStr: string): string {
+  const date = new Date(dateStr);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  
+  if (diffDays === 0) return "Aujourd'hui";
+  if (diffDays === 1) return "Hier";
+  if (diffDays < 7) return `Il y a ${diffDays} jours`;
+  if (diffDays < 30) return `Il y a ${Math.floor(diffDays / 7)} semaine${Math.floor(diffDays / 7) > 1 ? "s" : ""}`;
+  if (diffDays < 365) return `Il y a ${Math.floor(diffDays / 30)} mois`;
+  return `Il y a ${Math.floor(diffDays / 365)} an${Math.floor(diffDays / 365) > 1 ? "s" : ""}`;
+}
+
+function getInitial(name: string | null): string {
+  if (!name) return "A.";
+  const first = name.trim().charAt(0).toUpperCase();
+  return first + ".";
+}
 
 function StarRating({ rating }: { rating: number }) {
   return (
@@ -63,6 +51,36 @@ function StarRating({ rating }: { rating: number }) {
 export function ReviewsSection() {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-100px" });
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchReviews() {
+      try {
+        const res = await fetch("/api/admin/reviews");
+        if (res.ok) {
+          const data = await res.json();
+          if (data.reviews && data.reviews.length > 0) {
+            setReviews(
+              data.reviews
+                .filter((r: { comment: string | null }) => r.comment && r.comment.trim().length > 0)
+                .slice(0, 6)
+                .map((r: { user_name: string | null; rating: number; comment: string; created_at: string }) => ({
+                  name: getInitial(r.user_name),
+                  rating: r.rating,
+                  text: r.comment,
+                  date: formatRelativeDate(r.created_at),
+                }))
+            );
+          }
+        }
+      } catch {
+        // No reviews available
+      }
+      setLoading(false);
+    }
+    fetchReviews();
+  }, []);
 
   return (
     <section className="bg-gris-anthracite/50 py-20 sm:py-28" ref={ref}>
@@ -82,7 +100,16 @@ export function ReviewsSection() {
         </motion.div>
 
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {reviews.map((review, index) => (
+          {loading ? (
+            Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="h-48 animate-pulse rounded-2xl bg-gris-anthracite" />
+            ))
+          ) : reviews.length === 0 ? (
+            <div className="col-span-full text-center py-12">
+              <p className="text-blanc-casse/50">Les avis de nos clients apparaitront ici bientot.</p>
+            </div>
+          ) : (
+            reviews.map((review, index) => (
             <motion.div
               key={review.name}
               initial={{ opacity: 0, y: 30 }}
@@ -104,7 +131,8 @@ export function ReviewsSection() {
                 </span>
               </div>
             </motion.div>
-          ))}
+            ))
+          )}
         </div>
       </div>
     </section>
