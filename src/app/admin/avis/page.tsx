@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Star, MessageSquare, ThumbsUp, Users } from "lucide-react";
+import { Star, MessageSquare, ThumbsUp, Users, Trash2 } from "lucide-react";
 
 interface Review {
   id: string;
@@ -41,6 +41,26 @@ export default function AdminAvisPage() {
     }
     fetchReviews();
   }, []);
+
+  async function handleDeleteReview(reviewId: string) {
+    if (!confirm("Supprimer cet avis ?")) return;
+    try {
+      const res = await fetch(`/api/admin/reviews?id=${reviewId}`, { method: "DELETE" });
+      if (res.ok) {
+        setReviews(prev => prev.filter(r => r.id !== reviewId));
+        const remaining = reviews.filter(r => r.id !== reviewId);
+        if (remaining.length === 0) {
+          setStats({ totalReviews: 0, averageRating: 0, ratingDistribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }, withComments: 0 });
+        } else {
+          const avg = remaining.reduce((sum, r) => sum + r.rating, 0) / remaining.length;
+          const dist: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+          remaining.forEach(r => { dist[r.rating] = (dist[r.rating] || 0) + 1; });
+          const comments = remaining.filter(r => r.comment && r.comment.trim().length > 0).length;
+          setStats({ totalReviews: remaining.length, averageRating: avg, ratingDistribution: dist, withComments: comments });
+        }
+      }
+    } catch {}
+  }
 
   if (loading) {
     return (
@@ -232,6 +252,13 @@ export default function AdminAvisPage() {
                     <span>{new Date(review.created_at).toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" })}</span>
                   </div>
                 </div>
+                <button
+                  onClick={() => handleDeleteReview(review.id)}
+                  className="shrink-0 p-2 rounded-lg text-blanc-casse/30 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                  title="Supprimer cet avis"
+                >
+                  <Trash2 size={16} />
+                </button>
               </div>
             </motion.div>
           ))

@@ -1,5 +1,25 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const reviewId = searchParams.get("id");
+    
+    if (!reviewId) {
+      return NextResponse.json({ error: "ID requis" }, { status: 400 });
+    }
+
+    const supabase = createServiceClient();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase.from("reviews") as any).delete().eq("id", reviewId);
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Delete review error:", error);
+    return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
+  }
+}
 
 export async function GET() {
   try {

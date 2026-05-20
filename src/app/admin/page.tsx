@@ -7,6 +7,8 @@ import {
   ShoppingCart,
   Wrench,
   Users,
+  UserPlus,
+  Eye,
   Plus,
   Package,
   FileText,
@@ -66,6 +68,8 @@ export default function AdminDashboard() {
   const [clientCount, setClientCount] = useState(0);
   const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([]);
   const [recentRepairs, setRecentRepairs] = useState<RecentRepair[]>([]);
+  const [totalClients, setTotalClients] = useState(0);
+  const [newClientsToday, setNewClientsToday] = useState(0);
 
   useEffect(() => {
     async function fetchDashboardData() {
@@ -78,6 +82,8 @@ export default function AdminDashboard() {
         setOrderCount(data.orderCount);
         setRepairCount(data.repairCount);
         setClientCount(data.clientCount);
+        setTotalClients(data.totalClients || 0);
+        setNewClientsToday(data.newClientsToday || 0);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         setRecentOrders(data.recentOrders.map((o: any) => ({
           ...o,
@@ -129,6 +135,37 @@ export default function AdminDashboard() {
           label="Nouveaux clients"
           value={loading ? "..." : String(clientCount)}
         />
+      </div>
+
+      {/* Clients Stats */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="rounded-2xl border border-white/5 bg-gris-anthracite p-5">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 rounded-lg bg-blue-500/10">
+              <Users size={18} className="text-blue-400" />
+            </div>
+            <span className="text-xs text-blanc-casse/50">Total clients inscrits</span>
+          </div>
+          <span className="text-2xl font-bold text-blanc-casse">{totalClients}</span>
+        </div>
+        <div className="rounded-2xl border border-white/5 bg-gris-anthracite p-5">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 rounded-lg bg-vert-neon/10">
+              <UserPlus size={18} className="text-vert-neon" />
+            </div>
+            <span className="text-xs text-blanc-casse/50">Nouveaux aujourd&apos;hui</span>
+          </div>
+          <span className="text-2xl font-bold text-blanc-casse">{newClientsToday}</span>
+        </div>
+        <div className="rounded-2xl border border-white/5 bg-gris-anthracite p-5">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 rounded-lg bg-purple-500/10">
+              <Eye size={18} className="text-purple-400" />
+            </div>
+            <span className="text-xs text-blanc-casse/50">Nouveaux ce mois</span>
+          </div>
+          <span className="text-2xl font-bold text-blanc-casse">{clientCount}</span>
+        </div>
       </div>
 
       {/* Quick Actions */}

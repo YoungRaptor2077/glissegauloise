@@ -53,6 +53,21 @@ export async function GET() {
       .select("*", { count: "exact", head: true })
       .gte("created_at", startOfMonth);
 
+    // Total clients with accounts
+    const { count: totalClients } = await supabase
+      .from("profiles")
+      .select("*", { count: "exact", head: true })
+      .eq("role", "client");
+
+    // New clients today
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayISO = today.toISOString();
+    const { count: newClientsToday } = await supabase
+      .from("profiles")
+      .select("*", { count: "exact", head: true })
+      .gte("created_at", todayISO);
+
     // Recent orders (4)
     const { data: recentOrdersRaw } = await supabase
       .from("orders")
@@ -126,6 +141,8 @@ export async function GET() {
       orderCount,
       repairCount: repairCount || 0,
       clientCount: clientCount || 0,
+      totalClients: totalClients || 0,
+      newClientsToday: newClientsToday || 0,
       recentOrders,
       recentRepairs,
     });
