@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { createClient } from "@/lib/supabase/client";
 
-const ADMIN_EMAILS = ["gdrmathis15@gmail.com"];
+const ADMIN_EMAILS = ["gdrmathis15@gmail.com", "vanderieviere76@gmail.com"];
 
 function ConnexionForm() {
   const searchParams = useSearchParams();
