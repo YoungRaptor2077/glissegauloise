@@ -83,7 +83,7 @@ export default function AvisPage() {
 
           <div className="pt-4 space-y-3">
             <a
-              href="https://www.google.com/maps/search/GlisseGauloisse+49+Route+de+Margency+Eaubonne"
+              href="https://www.google.com/maps/search/GlisseGauloisse+Eaubonne+95600"
               target="_blank"
               rel="noopener noreferrer"
               className="block w-full rounded-xl bg-vert-neon px-4 py-3 text-sm font-semibold text-noir-mat hover:opacity-90 transition-opacity"
