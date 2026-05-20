@@ -23,22 +23,25 @@ export async function POST(request: NextRequest) {
         is_read: false,
       });
 
-    // Send email for repair updates (always, even if notification insert fails)
+    // Send email for repair updates (only important statuses)
     if (type === "repair_update" && user_id) {
-      try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { data: profile } = await (supabase.from("profiles") as any)
-          .select("email, full_name")
-          .eq("id", user_id)
-          .single();
+      const emailableStatuses = ["waiting_parts", "in_progress", "testing", "completed", "ready_pickup", "closed"];
+      const statusKey = body.status_key || "";
+      
+      if (emailableStatuses.includes(statusKey)) {
+        try {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const { data: profile } = await (supabase.from("profiles") as any)
+            .select("email, full_name")
+            .eq("id", user_id)
+            .single();
 
-        if (profile?.email) {
-          // Pass the raw status key from the body (added by the admin page)
-          const statusKey = body.status_key || "";
-          sendRepairStatusEmail(profile.email, profile.full_name || "", statusKey);
+          if (profile?.email) {
+            sendRepairStatusEmail(profile.email, profile.full_name || "", statusKey);
+          }
+        } catch {
+          // Email failed, non-blocking
         }
-      } catch {
-        // Email failed, non-blocking
       }
     }
 

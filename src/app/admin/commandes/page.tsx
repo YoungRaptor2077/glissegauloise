@@ -119,6 +119,24 @@ export default function CommandesPage() {
       setOrders((prev) =>
         prev.map((o) => (o.rawId === orderId ? { ...o, status: newStatus } : o))
       );
+
+      // Send email notification for important status changes
+      const emailStatuses = ["confirmed", "shipped", "delivered"];
+      if (emailStatuses.includes(newStatus)) {
+        const order = orders.find((o) => o.rawId === orderId);
+        if (order?.email) {
+          fetch("/api/notify/order", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              email: order.email,
+              clientName: order.client,
+              orderId: order.id,
+              status: newStatus,
+            }),
+          });
+        }
+      }
     } else {
       setError("Erreur lors de la mise a jour du statut de la commande.");
     }
