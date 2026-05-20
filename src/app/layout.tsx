@@ -18,24 +18,27 @@ export const metadata: Metadata = {
     process.env.NEXT_PUBLIC_SITE_URL || "https://glissegauloisse.fr"
   ),
   title: {
-    default: "GlisseGauloisse - Trottinettes Electriques : Reparation, Pieces & Accessoires",
+    default: "GlisseGauloisse | Reparation Trottinette Electrique Eaubonne 95",
     template: "%s | GlisseGauloisse",
   },
   description:
-    "Specialiste trottinette electrique a Eaubonne (95). Reparation, diagnostic, maintenance et vente de pieces detachees. Dualtron, Kaabo, Xiaomi, Ninebot. Livraison en France.",
+    "GlisseGauloisse - Expert en reparation de trottinettes electriques a Eaubonne (95600). Diagnostic, reparation batterie, pneus, freins, controleurs. Dualtron, Kaabo, Xiaomi, Nami, Vsett. Devis gratuit.",
   keywords: [
-    "trottinette electrique",
-    "reparation trottinette",
-    "pieces detachees trottinette",
-    "diagnostic trottinette electrique",
-    "maintenance trottinette",
-    "Dualtron",
-    "Kaabo",
-    "Xiaomi",
-    "Ninebot",
-    "Eaubonne",
-    "Val d'Oise",
-    "France",
+    "reparation trottinette electrique",
+    "reparation trottinette Eaubonne",
+    "reparation trottinette 95",
+    "reparation trottinette Val d'Oise",
+    "GlisseGauloisse",
+    "diagnostic trottinette",
+    "reparation Dualtron",
+    "reparation Kaabo",
+    "reparation Xiaomi",
+    "pieces trottinette electrique",
+    "batterie trottinette",
+    "pneu trottinette",
+    "entretien trottinette electrique",
+    "meilleur reparateur trottinette",
+    "trottinette electrique 95600",
   ],
   authors: [{ name: "GlisseGauloisse" }],
   creator: "GlisseGauloisse",
@@ -50,19 +53,23 @@ export const metadata: Metadata = {
       "max-snippet": -1,
     },
   },
+  alternates: {
+    canonical: "https://glissegauloisse.fr",
+  },
   openGraph: {
-    title: "GlisseGauloisse - Trottinettes Electriques : Reparation, Pieces & Accessoires",
+    title: "GlisseGauloisse | Reparation Trottinette Electrique Eaubonne 95",
     description:
-      "Specialiste trottinette electrique. Reparation, diagnostic, maintenance et vente de pieces detachees premium.",
+      "GlisseGauloisse - Expert en reparation de trottinettes electriques a Eaubonne (95600). Diagnostic, reparation batterie, pneus, freins, controleurs. Dualtron, Kaabo, Xiaomi, Nami, Vsett. Devis gratuit.",
     type: "website",
     locale: "fr_FR",
     siteName: "GlisseGauloisse",
+    url: "https://glissegauloisse.fr",
   },
   twitter: {
     card: "summary_large_image",
-    title: "GlisseGauloisse - Trottinettes Electriques : Reparation, Pieces & Accessoires",
+    title: "GlisseGauloisse | Reparation Trottinette Electrique Eaubonne 95",
     description:
-      "Specialiste trottinette electrique. Reparation, diagnostic, maintenance et vente de pieces detachees premium.",
+      "GlisseGauloisse - Expert en reparation de trottinettes electriques a Eaubonne (95600). Diagnostic, reparation batterie, pneus, freins, controleurs. Dualtron, Kaabo, Xiaomi, Nami, Vsett. Devis gratuit.",
   },
 };
 
@@ -81,8 +88,9 @@ export default function RootLayout({
               "@context": "https://schema.org",
               "@type": "LocalBusiness",
               "name": "GlisseGauloisse",
-              "description": "Expert en reparation de trottinettes electriques a Eaubonne (95600). Diagnostic, reparation batterie, pneus, freins. Toutes marques: Dualtron, Kaabo, Xiaomi, Nami, Vsett.",
-              "url": "https://glissegauloise.vercel.app",
+              "alternateName": ["Glisse Gauloisse", "GlisseGauloise", "Glisse Gauloise"],
+              "description": "Expert en reparation de trottinettes electriques a Eaubonne (95600). Diagnostic, reparation batterie, pneus, freins, controleurs. Toutes marques: Dualtron, Kaabo, Xiaomi, Nami, Vsett.",
+              "url": "https://glissegauloisse.fr",
               "telephone": "+33786757963",
               "email": "GlisseGauloisse.Service@outlook.fr",
               "address": {
@@ -90,6 +98,7 @@ export default function RootLayout({
                 "streetAddress": "49 Route de Margency",
                 "addressLocality": "Eaubonne",
                 "postalCode": "95600",
+                "addressRegion": "Val-d'Oise",
                 "addressCountry": "FR"
               },
               "geo": {
@@ -97,6 +106,14 @@ export default function RootLayout({
                 "latitude": "48.9922",
                 "longitude": "2.2847"
               },
+              "areaServed": [
+                { "@type": "City", "name": "Eaubonne" },
+                { "@type": "City", "name": "Enghien-les-Bains" },
+                { "@type": "City", "name": "Montmorency" },
+                { "@type": "City", "name": "Ermont" },
+                { "@type": "City", "name": "Saint-Gratien" },
+                { "@type": "AdministrativeArea", "name": "Val-d'Oise" }
+              ],
               "openingHoursSpecification": [
                 { "@type": "OpeningHoursSpecification", "dayOfWeek": "Monday", "opens": "09:00", "closes": "18:00" },
                 { "@type": "OpeningHoursSpecification", "dayOfWeek": "Wednesday", "opens": "09:00", "closes": "18:00" },
@@ -104,17 +121,45 @@ export default function RootLayout({
                 { "@type": "OpeningHoursSpecification", "dayOfWeek": "Friday", "opens": "09:00", "closes": "18:00" },
                 { "@type": "OpeningHoursSpecification", "dayOfWeek": "Saturday", "opens": "09:00", "closes": "17:00" }
               ],
+              "hasOfferCatalog": {
+                "@type": "OfferCatalog",
+                "name": "Services de reparation trottinette electrique",
+                "itemListElement": [
+                  { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Diagnostic trottinette electrique", "description": "Diagnostic complet de votre trottinette electrique" } },
+                  { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Reparation batterie trottinette", "description": "Remplacement et reparation de batteries pour trottinettes electriques" } },
+                  { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Changement pneu trottinette", "description": "Remplacement de pneus et chambres a air pour trottinettes" } },
+                  { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Reparation freinage trottinette", "description": "Reparation et remplacement de systemes de freinage" } },
+                  { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Reparation controleur trottinette", "description": "Diagnostic et reparation de controleurs electroniques" } },
+                  { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Entretien trottinette electrique", "description": "Service d'entretien complet pour trottinettes electriques" } }
+                ]
+              },
               "aggregateRating": {
                 "@type": "AggregateRating",
                 "ratingValue": "5.0",
                 "reviewCount": "10"
               },
               "priceRange": "$$",
-              "image": "https://glissegauloise.vercel.app/og-image.png",
+              "image": "https://glissegauloisse.fr/og-image.png",
               "sameAs": [
                 "https://www.instagram.com/glissegauloisse/",
                 "https://www.tiktok.com/@glissegauloisse"
               ]
+            })
+          }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "WebSite",
+              "name": "GlisseGauloisse",
+              "url": "https://glissegauloisse.fr",
+              "potentialAction": {
+                "@type": "SearchAction",
+                "target": "https://glissegauloisse.fr/boutique?search={search_term_string}",
+                "query-input": "required name=search_term_string"
+              }
             })
           }}
         />

@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Contact | Glisse Gauloise",
+  title: "Contact & Devis Reparation Trottinette Eaubonne | GlisseGauloisse",
   description:
-    "Contactez Glisse Gauloise a Eaubonne. Telephone, email, formulaire de contact et plan d'acces. Nous sommes a votre ecoute pour toute question.",
+    "Contactez GlisseGauloisse a Eaubonne (95600). 07 86 75 79 63. Devis gratuit reparation trottinette electrique. 49 Route de Margency. Reponse rapide garantie.",
   openGraph: {
-    title: "Contact | Glisse Gauloise",
+    title: "Contact & Devis Reparation Trottinette Eaubonne | GlisseGauloisse",
     description:
-      "Contactez Glisse Gauloise a Eaubonne. Telephone, email, formulaire de contact et plan d'acces.",
+      "Contactez GlisseGauloisse a Eaubonne (95600). 07 86 75 79 63. Devis gratuit reparation trottinette electrique. 49 Route de Margency. Reponse rapide garantie.",
     type: "website",
     locale: "fr_FR",
   },

@@ -3,27 +3,17 @@ import { HomePage } from "./HomePage";
 
 export const metadata: Metadata = {
   title:
-    "Glisse Gauloise - Reparation Trottinette Electrique Eaubonne (95) | Val d'Oise",
+    "GlisseGauloisse | N°1 Reparation Trottinette Electrique Eaubonne 95600",
   description:
-    "Expert en reparation de trottinettes electriques a Eaubonne (95). Diagnostic, entretien, depannage et vente de pieces detachees. Atelier specialise Val d'Oise. Toutes marques : Dualtron, Kaabo, Xiaomi, Nami, Vsett.",
-  keywords: [
-    "reparation trottinette Eaubonne",
-    "reparation trottinette 95",
-    "reparation trottinette Val d'Oise",
-    "atelier trottinette electrique",
-    "diagnostic trottinette electrique",
-    "pieces detachees trottinette",
-    "entretien trottinette electrique",
-    "depannage trottinette Eaubonne",
-  ],
+    "GlisseGauloisse - Votre expert en reparation de trottinettes electriques a Eaubonne (95600, Val d'Oise). Diagnostic gratuit, reparation rapide. Dualtron, Kaabo, Xiaomi, Nami, Vsett, Minimotors. Pieces detachees, entretien, depannage. Note 5/5.",
   openGraph: {
     title:
-      "Glisse Gauloise - Expert Reparation Trottinette Electrique a Eaubonne",
+      "GlisseGauloisse | N°1 Reparation Trottinette Electrique Eaubonne 95600",
     description:
-      "Atelier specialise dans la reparation et l'entretien de trottinettes electriques. Diagnostic, depannage, pieces detachees. Eaubonne, Val d'Oise (95).",
+      "GlisseGauloisse - Votre expert en reparation de trottinettes electriques a Eaubonne (95600, Val d'Oise). Diagnostic gratuit, reparation rapide. Dualtron, Kaabo, Xiaomi, Nami, Vsett, Minimotors. Pieces detachees, entretien, depannage. Note 5/5.",
     type: "website",
     locale: "fr_FR",
-    siteName: "Glisse Gauloise",
+    siteName: "GlisseGauloisse",
   },
 };
 
