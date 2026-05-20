@@ -14,6 +14,7 @@ import {
   CreditCard,
   Users,
   MessageSquare,
+  Star,
   Settings,
   ChevronLeft,
   Menu,
@@ -35,6 +36,7 @@ const navItems: NavItem[] = [
   { label: "Devis", href: "/admin/devis", icon: <FileText size={20} /> },
   { label: "Tarifs", href: "/admin/tarifs", icon: <CreditCard size={20} /> },
   { label: "Clients", href: "/admin/clients", icon: <Users size={20} /> },
+  { label: "Avis", href: "/admin/avis", icon: <Star size={20} /> },
   { label: "Conversations", href: "/admin/conversations", icon: <MessageSquare size={20} /> },
   { label: "Parametres", href: "/admin/parametres", icon: <Settings size={20} /> },
 ];
