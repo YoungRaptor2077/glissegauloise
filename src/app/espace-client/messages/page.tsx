@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { MessageSquare, Plus } from "lucide-react";
+import { MessageSquare, Plus, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/Badge";
@@ -75,6 +75,18 @@ export default function MessagesPage() {
       // Error
     } finally {
       setSending(false);
+    }
+  }
+
+  async function handleDeleteConversation(convId: string) {
+    if (!confirm("Supprimer cette conversation ?")) return;
+    try {
+      const res = await fetch(`/api/messages?id=${convId}`, { method: "DELETE" });
+      if (res.ok) {
+        setConversations(prev => prev.filter(c => c.id !== convId));
+      }
+    } catch {
+      // Error
     }
   }
 
@@ -193,45 +205,58 @@ export default function MessagesPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, delay: index * 0.05 }}
               >
-                <Link href={`/espace-client/messages/${conv.id}`}>
-                  <div className="p-5 bg-gris-anthracite border border-white/5 rounded-2xl hover:border-white/10 transition-colors cursor-pointer">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex items-start gap-4 flex-1 min-w-0">
-                        <div className="p-3 rounded-xl bg-vert-neon/10">
-                          <MessageSquare className="h-5 w-5 text-vert-neon" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2">
-                            <p className="text-sm font-medium text-blanc-casse truncate">
-                              {conv.subject}
-                            </p>
-                            {conv.unreadCount > 0 && (
-                              <Badge variant="neon">{conv.unreadCount}</Badge>
-                            )}
+                <div className="relative">
+                  <Link href={`/espace-client/messages/${conv.id}`}>
+                    <div className="p-5 pr-12 bg-gris-anthracite border border-white/5 rounded-2xl hover:border-white/10 transition-colors cursor-pointer">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex items-start gap-4 flex-1 min-w-0">
+                          <div className="p-3 rounded-xl bg-vert-neon/10">
+                            <MessageSquare className="h-5 w-5 text-vert-neon" />
                           </div>
-                          {conv.lastMessage && (
-                            <p className="text-sm text-blanc-casse/50 mt-1 truncate">
-                              {conv.lastMessage}
-                            </p>
-                          )}
-                          <div className="flex items-center gap-2 mt-2">
-                            {linkedType && (
-                              <Badge variant="default">{linkedType}</Badge>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2">
+                              <p className="text-sm font-medium text-blanc-casse truncate">
+                                {conv.subject}
+                              </p>
+                              {conv.unreadCount > 0 && (
+                                <Badge variant="neon">{conv.unreadCount}</Badge>
+                              )}
+                            </div>
+                            {conv.lastMessage && (
+                              <p className="text-sm text-blanc-casse/50 mt-1 truncate">
+                                {conv.lastMessage}
+                              </p>
                             )}
-                            {conv.status === "closed" && (
-                              <Badge variant="default">Ferme</Badge>
-                            )}
+                            <div className="flex items-center gap-2 mt-2">
+                              {linkedType && (
+                                <Badge variant="default">{linkedType}</Badge>
+                              )}
+                              {conv.status === "closed" && (
+                                <Badge variant="default">Ferme</Badge>
+                              )}
+                            </div>
                           </div>
                         </div>
+                        {conv.lastMessageDate && (
+                          <span className="text-xs text-blanc-casse/50 whitespace-nowrap">
+                            {formatRelativeDate(conv.lastMessageDate)}
+                          </span>
+                        )}
                       </div>
-                      {conv.lastMessageDate && (
-                        <span className="text-xs text-blanc-casse/50 whitespace-nowrap">
-                          {formatRelativeDate(conv.lastMessageDate)}
-                        </span>
-                      )}
                     </div>
-                  </div>
-                </Link>
+                  </Link>
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleDeleteConversation(conv.id);
+                    }}
+                    className="absolute top-5 right-4 p-2 rounded-lg text-blanc-casse/30 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                    title="Supprimer"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
               </motion.div>
             );
           })}

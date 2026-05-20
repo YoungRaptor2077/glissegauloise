@@ -166,3 +166,54 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
   }
 }
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const cookieStore = await cookies();
+    const supabaseAuth = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() { return cookieStore.getAll(); },
+          setAll() {},
+        },
+      }
+    );
+
+    const { data: { user } } = await supabaseAuth.auth.getUser();
+    if (!user) {
+      return NextResponse.json({ error: "Non authentifie" }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const convId = searchParams.get("id");
+    if (!convId) {
+      return NextResponse.json({ error: "ID requis" }, { status: 400 });
+    }
+
+    const supabase = createServiceClient();
+
+    // Verify the conversation belongs to this user
+    const { data: conv } = await supabase
+      .from("conversations")
+      .select("user_id")
+      .eq("id", convId)
+      .single();
+
+    if (!conv || conv.user_id !== user.id) {
+      return NextResponse.json({ error: "Non autorise" }, { status: 403 });
+    }
+
+    // Delete messages first (foreign key)
+    await supabase.from("messages").delete().eq("conversation_id", convId);
+
+    // Delete conversation
+    await supabase.from("conversations").delete().eq("id", convId);
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Messages DELETE error:", error);
+    return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
+  }
+}
