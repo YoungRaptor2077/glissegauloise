@@ -33,13 +33,11 @@ export async function GET() {
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
-    const { points_per_euro, reward_threshold, reward_percent } = body;
+    const points_per_euro = Math.round(Number(body.points_per_euro));
+    const reward_threshold = Math.round(Number(body.reward_threshold));
+    const reward_percent = Math.round(Number(body.reward_percent));
 
-    if (
-      typeof points_per_euro !== "number" ||
-      typeof reward_threshold !== "number" ||
-      typeof reward_percent !== "number"
-    ) {
+    if (isNaN(points_per_euro) || isNaN(reward_threshold) || isNaN(reward_percent)) {
       return NextResponse.json({ error: "Parametres invalides" }, { status: 400 });
     }
 
@@ -55,11 +53,12 @@ export async function PUT(request: NextRequest) {
     if (existing) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { error } = await (supabase.from("loyalty_settings") as any)
-        .update({ points_per_euro, reward_threshold, reward_percent })
+        .update({ points_per_euro, reward_threshold, reward_percent, updated_at: new Date().toISOString() })
         .eq("id", existing.id);
 
       if (error) {
-        return NextResponse.json({ error: "Erreur lors de la mise a jour" }, { status: 500 });
+        console.error("Loyalty update error:", error);
+        return NextResponse.json({ error: "Erreur: " + error.message }, { status: 500 });
       }
     } else {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -67,12 +66,14 @@ export async function PUT(request: NextRequest) {
         .insert({ points_per_euro, reward_threshold, reward_percent });
 
       if (error) {
-        return NextResponse.json({ error: "Erreur lors de la creation" }, { status: 500 });
+        console.error("Loyalty insert error:", error);
+        return NextResponse.json({ error: "Erreur: " + error.message }, { status: 500 });
       }
     }
 
     return NextResponse.json({ success: true, points_per_euro, reward_threshold, reward_percent });
-  } catch {
-    return NextResponse.json(DEFAULT_SETTINGS);
+  } catch (err) {
+    console.error("Loyalty API catch error:", err);
+    return NextResponse.json({ error: "Erreur serveur inattendue" }, { status: 500 });
   }
 }
