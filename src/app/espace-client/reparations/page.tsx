@@ -140,7 +140,11 @@ export default function ReparationsPage() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, delay: index * 0.05 }}
-                className="p-5 bg-gris-anthracite border border-white/5 rounded-2xl"
+                className={`p-5 border rounded-2xl transition-all ${
+                  repair.status === "ready_pickup" 
+                    ? "bg-gris-anthracite/50 border-white/5 opacity-70" 
+                    : "bg-gris-anthracite border-white/5"
+                }`}
               >
                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                   <div className="flex items-start gap-4">
@@ -162,7 +166,12 @@ export default function ReparationsPage() {
                       <p className="text-sm text-blanc-casse/70 mt-2">
                         {repair.issue_description}
                       </p>
-                      {repair.status !== "completed" && repair.status !== "ready_pickup" && (
+                      {repair.status === "ready_pickup" ? (
+                        <div className="flex items-center gap-2 mt-3">
+                          <CheckCircle2 size={14} className="text-green-400" />
+                          <span className="text-xs font-medium text-green-400">Reparation terminee - Pret a recuperer</span>
+                        </div>
+                      ) : (
                         <RepairTimeline currentStatus={repair.status} />
                       )}
                     </div>
