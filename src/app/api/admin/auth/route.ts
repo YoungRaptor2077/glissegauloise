@@ -7,6 +7,7 @@ function setAdminCookie(response: NextResponse) {
   response.cookies.set("admin_session", "authenticated", {
     path: "/",
     httpOnly: true,
+    secure: true,
     sameSite: "lax",
     maxAge: 604800, // 7 days
   });
