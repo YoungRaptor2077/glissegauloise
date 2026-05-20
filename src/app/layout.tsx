@@ -4,6 +4,7 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { CartProvider } from "@/components/cart/CartProvider";
 import { CartDrawer } from "@/components/cart/CartDrawer";
+import { CookieBanner } from "@/components/layout/CookieBanner";
 import "./globals.css";
 
 const inter = Inter({
@@ -77,6 +78,7 @@ export default function RootLayout({
           <main className="pt-16 lg:pt-20">{children}</main>
           <Footer />
           <CartDrawer />
+          <CookieBanner />
         </CartProvider>
       </body>
     </html>
