@@ -12,8 +12,6 @@ interface Notification {
   read: boolean;
 }
 
-const initialNotifications: Notification[] = [];
-
 export function NotificationBell() {
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -29,6 +27,48 @@ export function NotificationBell() {
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    async function loadNotifications() {
+      try {
+        const res = await fetch("/api/admin/dashboard");
+        if (!res.ok) return;
+        const data = await res.json();
+        const notifs: Notification[] = [];
+
+        if (data.recentOrders) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          data.recentOrders.slice(0, 2).forEach((order: any) => {
+            notifs.push({
+              id: order.id,
+              title: "Nouvelle commande",
+              message: `Commande ${order.id} - ${order.total}\u20AC`,
+              time: order.date,
+              read: false,
+            });
+          });
+        }
+
+        if (data.recentRepairs) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          data.recentRepairs.slice(0, 2).forEach((repair: any) => {
+            notifs.push({
+              id: repair.id,
+              title: "Nouvelle reparation",
+              message: `${repair.board} - ${repair.client}`,
+              time: repair.date,
+              read: false,
+            });
+          });
+        }
+
+        setNotifications(notifs);
+      } catch {
+        // Silently fail
+      }
+    }
+    loadNotifications();
   }, []);
 
   const markAsRead = (id: string) => {

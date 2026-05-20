@@ -15,6 +15,7 @@ interface FileUploadProps {
   multiple?: boolean;
   maxFiles?: number;
   type: "image" | "video";
+  onChange?: (files: File[]) => void;
 }
 
 export function FileUpload({
@@ -23,6 +24,7 @@ export function FileUpload({
   multiple = true,
   maxFiles = 5,
   type,
+  onChange,
 }: FileUploadProps) {
   const [files, setFiles] = useState<UploadedFile[]>([]);
   const [isDragging, setIsDragging] = useState(false);
@@ -39,9 +41,11 @@ export function FileUpload({
         preview: type === "image" ? URL.createObjectURL(file) : "",
       }));
 
-      setFiles((prev) => [...prev, ...uploaded]);
+      const updated = [...files, ...uploaded];
+      setFiles(updated);
+      onChange?.(updated.map((f) => f.file));
     },
-    [files.length, maxFiles, type]
+    [files, maxFiles, type, onChange]
   );
 
   const handleDrop = useCallback(
@@ -70,9 +74,10 @@ export function FileUpload({
         URL.revokeObjectURL(updated[index].preview);
       }
       updated.splice(index, 1);
+      onChange?.(updated.map((f) => f.file));
       return updated;
     });
-  }, []);
+  }, [onChange]);
 
   const formatSize = (bytes: number) => {
     if (bytes < 1024) return `${bytes} B`;

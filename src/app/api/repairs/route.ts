@@ -11,6 +11,8 @@ interface RepairSubmission {
   telephone: string;
   email: string;
   localisation: string;
+  images?: string[];
+  videos?: string[];
 }
 
 export async function POST(request: NextRequest) {
@@ -72,8 +74,8 @@ export async function POST(request: NextRequest) {
           phone: body.telephone || null,
           email: body.email,
           location: body.localisation || null,
-          images: [],
-          videos: [],
+          images: body.images || [],
+          videos: body.videos || [],
         })
         .select()
         .single();
@@ -142,8 +144,8 @@ export async function POST(request: NextRequest) {
           phone: body.telephone || null,
           email: body.email,
           location: body.localisation || null,
-          images: [],
-          videos: [],
+          images: body.images || [],
+          videos: body.videos || [],
         });
 
       if (error) {

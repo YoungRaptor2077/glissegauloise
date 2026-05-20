@@ -1,8 +1,9 @@
 "use client";
 
+import React from "react";
 import { useState, useEffect } from "react";
 import { DataTable, type Column } from "@/components/admin/DataTable";
-import { X } from "lucide-react";
+import { X, Inbox, Search, Package, Wrench, FlaskConical, CheckCircle, HandMetal } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import type { Repair, Profile } from "@/types/database";
@@ -44,6 +45,16 @@ const statusStyles: Record<string, string> = {
 };
 
 const statusOrder = ["received", "diagnostic", "waiting_parts", "in_progress", "testing", "completed", "ready_pickup"];
+
+const statusIcons: Record<string, React.ReactNode> = {
+  received: <Inbox size={14} className="text-blue-400" />,
+  diagnostic: <Search size={14} className="text-yellow-400" />,
+  waiting_parts: <Package size={14} className="text-orange-400" />,
+  in_progress: <Wrench size={14} className="text-vert-neon" />,
+  testing: <FlaskConical size={14} className="text-purple-400" />,
+  completed: <CheckCircle size={14} className="text-green-400" />,
+  ready_pickup: <HandMetal size={14} className="text-cyan-400" />,
+};
 
 const tabs: { key: RepairStatus; label: string }[] = [
   { key: "all", label: "Toutes" },
@@ -142,7 +153,8 @@ export default function ReparationsPage() {
       key: "status",
       label: "Statut",
       render: (row) => (
-        <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusStyles[row.status] || ""}`}>
+        <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium ${statusStyles[row.status] || ""}`}>
+          {statusIcons[row.status]}
           {statusLabels[row.status] || row.status}
         </span>
       ),
@@ -267,7 +279,8 @@ export default function ReparationsPage() {
 
             <div className="rounded-xl border border-white/5 bg-noir-mat/50 p-4">
               <h3 className="text-sm font-medium text-blanc-casse/60 mb-2">Statut actuel</h3>
-              <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusStyles[selectedRepair.status] || ""}`}>
+              <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium ${statusStyles[selectedRepair.status] || ""}`}>
+                {statusIcons[selectedRepair.status]}
                 {statusLabels[selectedRepair.status]}
               </span>
             </div>
@@ -292,17 +305,20 @@ export default function ReparationsPage() {
                             : "border-white/20 bg-transparent"
                         )}
                       />
-                      <span
-                        className={cn(
-                          "text-xs",
-                          isCurrent
-                            ? "font-medium text-vert-neon"
-                            : isPast
-                            ? "text-blanc-casse/60"
-                            : "text-blanc-casse/30"
-                        )}
-                      >
-                        {statusLabels[s]}
+                      <span className="flex items-center gap-1.5">
+                        {statusIcons[s]}
+                        <span
+                          className={cn(
+                            "text-xs",
+                            isCurrent
+                              ? "font-medium text-vert-neon"
+                              : isPast
+                              ? "text-blanc-casse/60"
+                              : "text-blanc-casse/30"
+                          )}
+                        >
+                          {statusLabels[s]}
+                        </span>
                       </span>
                     </div>
                   );

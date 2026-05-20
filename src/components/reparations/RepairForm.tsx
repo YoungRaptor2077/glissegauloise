@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { FileUpload } from "./FileUpload";
+import { createClient } from "@/lib/supabase/client";
 
 const BRANDS = [
   "Dualtron",
@@ -56,6 +57,8 @@ export function RepairForm() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [images, setImages] = useState<File[]>([]);
+  const [videos, setVideos] = useState<File[]>([]);
 
   const handleChange = (
     e: React.ChangeEvent<
@@ -69,10 +72,36 @@ export function RepairForm() {
     e.preventDefault();
     setIsSubmitting(true);
     try {
+      const supabase = createClient();
+      const uploadedImageUrls: string[] = [];
+      const uploadedVideoUrls: string[] = [];
+
+      for (const file of images) {
+        const fileName = `repairs/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+        const { error } = await supabase.storage.from('uploads').upload(fileName, file);
+        if (!error) {
+          const { data: urlData } = supabase.storage.from('uploads').getPublicUrl(fileName);
+          uploadedImageUrls.push(urlData.publicUrl);
+        }
+      }
+
+      for (const file of videos) {
+        const fileName = `repairs/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+        const { error } = await supabase.storage.from('uploads').upload(fileName, file);
+        if (!error) {
+          const { data: urlData } = supabase.storage.from('uploads').getPublicUrl(fileName);
+          uploadedVideoUrls.push(urlData.publicUrl);
+        }
+      }
+
       const response = await fetch("/api/repairs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+          ...form,
+          images: uploadedImageUrls,
+          videos: uploadedVideoUrls,
+        }),
       });
       if (!response.ok) {
         throw new Error("Failed to submit");
@@ -217,12 +246,14 @@ export function RepairForm() {
           accept="image/jpeg,image/png,image/webp"
           type="image"
           maxFiles={5}
+          onChange={setImages}
         />
         <FileUpload
           label="Videos"
           accept="video/mp4,video/quicktime,video/x-msvideo"
           type="video"
           maxFiles={2}
+          onChange={setVideos}
         />
       </div>
 

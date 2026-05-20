@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { MessageSquare } from "lucide-react";
+import { MessageSquare, Plus, X } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/Badge";
 import { createClient } from "@/lib/supabase/client";
 import { useUser } from "@/lib/hooks/useUser";
@@ -54,6 +55,11 @@ export default function MessagesPage() {
   const { user, loading: userLoading } = useUser();
   const [conversations, setConversations] = useState<ConversationWithPreview[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showNewModal, setShowNewModal] = useState(false);
+  const [newSubject, setNewSubject] = useState("");
+  const [newMessage, setNewMessage] = useState("");
+  const [sending, setSending] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     async function fetchConversations() {
@@ -123,6 +129,50 @@ export default function MessagesPage() {
     }
   }, [user, userLoading]);
 
+  const handleNewConversation = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user || !newSubject.trim() || !newMessage.trim()) return;
+    setSending(true);
+
+    try {
+      const supabase = createClient();
+
+      // Create conversation
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: conv, error: convError } = await (supabase.from("conversations") as any)
+        .insert({
+          user_id: user.id,
+          subject: newSubject.trim(),
+          status: "open",
+          type: "general",
+        })
+        .select()
+        .single();
+
+      if (convError || !conv) {
+        console.error("Error creating conversation:", convError);
+        setSending(false);
+        return;
+      }
+
+      // Create first message
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabase.from("messages") as any).insert({
+        conversation_id: conv.id,
+        sender_id: user.id,
+        content: newMessage.trim(),
+        is_admin: false,
+        is_read: false,
+        attachments: [],
+      });
+
+      router.push(`/espace-client/messages/${conv.id}`);
+    } catch (err) {
+      console.error("Error creating conversation:", err);
+      setSending(false);
+    }
+  };
+
   if (userLoading || loading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -137,11 +187,21 @@ export default function MessagesPage() {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
+        className="flex items-center justify-between"
       >
-        <h1 className="text-2xl font-bold text-blanc-casse">Mes messages</h1>
-        <p className="mt-1 text-blanc-casse/60">
-          Consultez vos conversations avec le service client.
-        </p>
+        <div>
+          <h1 className="text-2xl font-bold text-blanc-casse">Mes messages</h1>
+          <p className="mt-1 text-blanc-casse/60">
+            Consultez vos conversations avec le service client.
+          </p>
+        </div>
+        <button
+          onClick={() => setShowNewModal(true)}
+          className="flex items-center gap-2 rounded-xl bg-vert-neon/10 px-4 py-2 text-sm font-medium text-vert-neon border border-vert-neon/20 hover:bg-vert-neon/20 transition-colors"
+        >
+          <Plus className="h-4 w-4" />
+          Nouveau message
+        </button>
       </motion.div>
 
       {conversations.length === 0 ? (
@@ -206,6 +266,64 @@ export default function MessagesPage() {
               </motion.div>
             );
           })}
+        </div>
+      )}
+
+      {/* New Message Modal */}
+      {showNewModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-noir-mat/80 p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="w-full max-w-md rounded-2xl border border-white/10 bg-gris-anthracite p-6"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-blanc-casse">Nouveau message</h2>
+              <button
+                onClick={() => setShowNewModal(false)}
+                className="p-1.5 rounded-lg text-blanc-casse/60 hover:bg-white/5 hover:text-blanc-casse"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <form onSubmit={handleNewConversation} className="space-y-4">
+              <div>
+                <label htmlFor="new-subject" className="mb-1.5 block text-sm font-medium text-blanc-casse/80">
+                  Sujet
+                </label>
+                <input
+                  id="new-subject"
+                  type="text"
+                  value={newSubject}
+                  onChange={(e) => setNewSubject(e.target.value)}
+                  placeholder="Objet de votre message..."
+                  required
+                  className="w-full rounded-xl border border-white/10 bg-noir-mat px-4 py-2.5 text-sm text-blanc-casse placeholder:text-blanc-casse/40 focus:border-vert-neon/50 focus:outline-none focus:ring-1 focus:ring-vert-neon/30"
+                />
+              </div>
+              <div>
+                <label htmlFor="new-message" className="mb-1.5 block text-sm font-medium text-blanc-casse/80">
+                  Message
+                </label>
+                <textarea
+                  id="new-message"
+                  rows={4}
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  placeholder="Ecrivez votre message..."
+                  required
+                  className="w-full rounded-xl border border-white/10 bg-noir-mat px-4 py-2.5 text-sm text-blanc-casse placeholder:text-blanc-casse/40 focus:border-vert-neon/50 focus:outline-none focus:ring-1 focus:ring-vert-neon/30 resize-none"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={sending}
+                className="w-full rounded-xl bg-vert-neon px-4 py-2.5 text-sm font-medium text-noir-mat hover:bg-vert-neon-dark transition-colors disabled:opacity-50"
+              >
+                {sending ? "Envoi..." : "Envoyer"}
+              </button>
+            </form>
+          </motion.div>
         </div>
       )}
     </div>

@@ -1,8 +1,9 @@
 "use client";
 
+import React from "react";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Wrench, MessageSquare } from "lucide-react";
+import { Wrench, MessageSquare, Inbox, Search, Package, FlaskConical, CheckCircle, HandMetal } from "lucide-react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/Badge";
 import type { BadgeVariant } from "@/components/ui/Badge";
@@ -22,6 +23,16 @@ const statusConfig: Record<string, { label: string; variant: BadgeVariant }> = {
 
 const timelineSteps = ["received", "diagnostic", "waiting_parts", "in_progress", "testing", "completed", "ready_pickup"];
 
+const timelineIcons: Record<string, React.ReactNode> = {
+  received: <Inbox size={12} className="text-blue-400" />,
+  diagnostic: <Search size={12} className="text-yellow-400" />,
+  waiting_parts: <Package size={12} className="text-orange-400" />,
+  in_progress: <Wrench size={12} className="text-vert-neon" />,
+  testing: <FlaskConical size={12} className="text-purple-400" />,
+  completed: <CheckCircle size={12} className="text-green-400" />,
+  ready_pickup: <HandMetal size={12} className="text-cyan-400" />,
+};
+
 function RepairTimeline({ currentStatus }: { currentStatus: string }) {
   const currentIndex = timelineSteps.indexOf(currentStatus);
 
@@ -30,13 +41,16 @@ function RepairTimeline({ currentStatus }: { currentStatus: string }) {
       {timelineSteps.map((step, index) => (
         <div key={step} className="flex items-center">
           <div
-            className={`h-2 w-2 rounded-full ${
-              index <= currentIndex ? "bg-vert-neon" : "bg-white/20"
+            className={`flex items-center justify-center h-5 w-5 rounded-full ${
+              index <= currentIndex ? "bg-vert-neon/20" : "bg-white/5"
             }`}
-          />
+            title={statusConfig[step]?.label}
+          >
+            {timelineIcons[step]}
+          </div>
           {index < timelineSteps.length - 1 && (
             <div
-              className={`h-0.5 w-6 ${
+              className={`h-0.5 w-4 ${
                 index < currentIndex ? "bg-vert-neon" : "bg-white/10"
               }`}
             />
