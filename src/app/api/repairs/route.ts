@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { createServerClient } from "@supabase/ssr";
+import type { Database } from "@/types/database";
+
+type RepairInsert = Database["public"]["Tables"]["repairs"]["Insert"];
 
 export async function POST(request: NextRequest) {
   try {
@@ -10,6 +14,29 @@ export async function POST(request: NextRequest) {
         { error: "Les champs marque, description et email sont obligatoires" },
         { status: 400 }
       );
+    }
+
+    // Try to get authenticated user from cookies
+    let userId: string | null = null;
+    try {
+      const supabaseAuth = createServerClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        {
+          cookies: {
+            getAll() {
+              return request.cookies.getAll();
+            },
+            setAll() {},
+          },
+        }
+      );
+      const { data: { user } } = await supabaseAuth.auth.getUser();
+      if (user) {
+        userId = user.id;
+      }
+    } catch {
+      // Not authenticated, continue without user_id
     }
 
     const supabase = createServiceClient();
@@ -24,21 +51,27 @@ export async function POST(request: NextRequest) {
     if (body.preferenceContact === "telephone") contactPref = "phone";
     if (body.preferenceContact === "les-deux" || body.preferenceContact === "both") contactPref = "both";
 
-    const { error: insertError } = await supabase
+    // Build insert data
+    const insertData: RepairInsert = {
+      brand: body.marque,
+      model: body.modele || body.marque,
+      issue_description: body.description,
+      urgency: urgency,
+      status: "received",
+      contact_preference: contactPref,
+      phone: body.telephone || null,
+      email: body.email,
+      location: body.localisation || null,
+      images: [],
+      videos: [],
+      user_id: userId,
+    };
+
+    const { data: repair, error: insertError } = await supabase
       .from("repairs")
-      .insert({
-        brand: body.marque,
-        model: body.modele || body.marque,
-        issue_description: body.description,
-        urgency: urgency,
-        status: "received",
-        contact_preference: contactPref,
-        phone: body.telephone || null,
-        email: body.email,
-        location: body.localisation || null,
-        images: [],
-        videos: [],
-      });
+      .insert(insertData)
+      .select()
+      .single();
 
     if (insertError) {
       console.error("REPAIR INSERT ERROR:", JSON.stringify(insertError));
@@ -48,7 +81,22 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    return NextResponse.json({ success: true });
+    // Try to create conversation if user is authenticated (non-blocking)
+    if (userId && repair) {
+      try {
+        await supabase.from("conversations").insert({
+          user_id: userId,
+          subject: "Reparation - " + body.marque + (body.modele ? " " + body.modele : ""),
+          status: "open",
+          type: "repair",
+          related_id: repair.id,
+        });
+      } catch {
+        // Non-critical, don't fail
+      }
+    }
+
+    return NextResponse.json({ success: true, repairId: repair?.id });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "inconnue";
     console.error("REPAIR ROUTE ERROR:", message);
