@@ -49,6 +49,6 @@ export const NAV_LINKS = [
 
 export const LEGAL_LINKS = [
   { label: "Mentions legales", href: "/mentions-legales" },
-  { label: "Politique de confidentialite", href: "/politique-confidentialite" },
-  { label: "CGV", href: "/cgv" },
+  { label: "Politique de confidentialite", href: "/politique-de-confidentialite" },
+  { label: "CGV", href: "/conditions-generales-de-vente" },
 ] as const;
