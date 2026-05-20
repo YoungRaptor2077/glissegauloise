@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { ShoppingBag, Wrench, MessageSquare, FileText } from "lucide-react";
 import { useUser } from "@/lib/hooks/useUser";
 import { createClient } from "@/lib/supabase/client";
+import { LoyaltyCard } from "@/components/client/LoyaltyCard";
 
 interface SummaryCard {
   label: string;
@@ -213,6 +214,9 @@ export default function EspaceClientPage() {
           </motion.div>
         ))}
       </div>
+
+      {/* Loyalty Card */}
+      <LoyaltyCard />
 
       {/* Recent Activity */}
       <motion.div
