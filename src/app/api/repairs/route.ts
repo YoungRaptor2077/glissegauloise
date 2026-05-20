@@ -50,6 +50,7 @@ export async function POST(request: NextRequest) {
     let contactPref: "email" | "phone" | "both" = "email";
     if (body.preferenceContact === "telephone") contactPref = "phone";
     if (body.preferenceContact === "les-deux" || body.preferenceContact === "both") contactPref = "both";
+    if (body.preferenceContact === "site") contactPref = "email"; // Store as email since notifications are via site
 
     // Build insert data
     const insertData: RepairInsert = {

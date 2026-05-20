@@ -21,6 +21,11 @@ interface RepairRow {
   estimatedCost: number | null;
   description: string;
   adminNotes: string | null;
+  images: string[];
+  videos: string[];
+  contactPreference: string;
+  phone: string | null;
+  email: string | null;
   [key: string]: unknown;
 }
 
@@ -110,6 +115,11 @@ export default function ReparationsPage() {
               estimatedCost: r.estimated_cost,
               description: r.issue_description,
               adminNotes: r.admin_notes,
+              images: r.images || [],
+              videos: r.videos || [],
+              contactPreference: r.contact_preference || "email",
+              phone: r.phone || null,
+              email: r.email || null,
             };
           })
         );
@@ -302,6 +312,44 @@ export default function ReparationsPage() {
               <h3 className="text-sm font-medium text-blanc-casse/60 mb-2">Description</h3>
               <p className="text-sm text-blanc-casse">{selectedRepair.description}</p>
             </div>
+
+            {/* Contact preference */}
+            <div className="rounded-xl border border-white/5 bg-noir-mat/50 p-4">
+              <h3 className="text-sm font-medium text-blanc-casse/60 mb-2">Preference de contact</h3>
+              <p className="text-sm text-blanc-casse">
+                {selectedRepair.contactPreference === "phone" ? "Telephone" : selectedRepair.contactPreference === "both" ? "Telephone + Email" : selectedRepair.contactPreference === "site" ? "Via le site" : "Email"}
+                {selectedRepair.phone && ` - ${selectedRepair.phone}`}
+                {selectedRepair.email && ` - ${selectedRepair.email}`}
+              </p>
+            </div>
+
+            {/* Images */}
+            {selectedRepair.images.length > 0 && (
+              <div className="rounded-xl border border-white/5 bg-noir-mat/50 p-4">
+                <h3 className="text-sm font-medium text-blanc-casse/60 mb-2">Photos ({selectedRepair.images.length})</h3>
+                <div className="grid grid-cols-2 gap-2">
+                  {selectedRepair.images.map((url, i) => (
+                    <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="block overflow-hidden rounded-lg border border-white/10 hover:border-vert-neon/40 transition-colors">
+                      <img src={url} alt={`Photo ${i + 1}`} className="h-24 w-full object-cover" />
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Videos */}
+            {selectedRepair.videos.length > 0 && (
+              <div className="rounded-xl border border-white/5 bg-noir-mat/50 p-4">
+                <h3 className="text-sm font-medium text-blanc-casse/60 mb-2">Videos ({selectedRepair.videos.length})</h3>
+                <div className="space-y-2">
+                  {selectedRepair.videos.map((url, i) => (
+                    <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="block rounded-lg border border-white/10 bg-gris-anthracite p-3 text-xs text-vert-neon hover:border-vert-neon/40 transition-colors">
+                      🎥 Video {i + 1} - Voir
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="rounded-xl border border-white/5 bg-noir-mat/50 p-4">
               <h3 className="text-sm font-medium text-blanc-casse/60 mb-2">Notes admin</h3>

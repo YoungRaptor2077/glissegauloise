@@ -272,6 +272,7 @@ export function RepairForm() {
           {[
             { value: "telephone", label: "Telephone" },
             { value: "email", label: "Email" },
+            { value: "site", label: "Site internet" },
           ].map((opt) => (
             <label key={opt.value} className="flex items-center gap-2 cursor-pointer">
               <input
