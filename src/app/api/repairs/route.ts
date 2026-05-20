@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { createServerClient } from "@supabase/ssr";
+import { sendRepairReceivedEmail } from "@/lib/email";
 import type { Database } from "@/types/database";
 
 type RepairInsert = Database["public"]["Tables"]["repairs"]["Insert"];
@@ -80,6 +81,12 @@ export async function POST(request: NextRequest) {
         { error: "Erreur base de donnees: " + insertError.message },
         { status: 500 }
       );
+    }
+
+    // Send confirmation email
+    const userEmail = body.email || null;
+    if (userEmail) {
+      sendRepairReceivedEmail(userEmail, body.marque + " " + (body.modele || ""));
     }
 
     // Try to create conversation if user is authenticated (non-blocking)

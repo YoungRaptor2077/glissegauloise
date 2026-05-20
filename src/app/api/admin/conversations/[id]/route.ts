@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { createClient } from "@/lib/supabase/server";
+import { sendNewMessageEmail } from "@/lib/email";
 
 async function verifyAdmin() {
   const authClient = await createClient();
@@ -147,6 +148,29 @@ export async function POST(
       .from("conversations")
       .update({ last_message_at: new Date().toISOString() })
       .eq("id", id);
+
+    // Send email notification to client
+    try {
+      const { data: convData } = await supabase
+        .from("conversations")
+        .select("user_id")
+        .eq("id", id)
+        .single();
+
+      if (convData?.user_id) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("email, full_name")
+          .eq("id", convData.user_id)
+          .single();
+
+        if (profile?.email) {
+          sendNewMessageEmail(profile.email, (profile as { full_name?: string }).full_name || "");
+        }
+      }
+    } catch {
+      // Email notification failed, non-blocking
+    }
 
     return NextResponse.json({ message });
   } catch (error) {

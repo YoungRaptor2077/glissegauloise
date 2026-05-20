@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
 import { createServiceClient } from "@/lib/supabase/service";
+import { sendOrderConfirmationEmail } from "@/lib/email";
 import type Stripe from "stripe";
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
@@ -96,4 +97,15 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     },
     stripe_payment_intent_id: session.payment_intent as string,
   });
+
+  // Send order confirmation email
+  const customerEmail = session.customer_details?.email;
+  if (customerEmail) {
+    const { data: orderData } = await supabase
+      .from("orders")
+      .select("id")
+      .eq("stripe_payment_intent_id", session.payment_intent as string)
+      .single();
+    sendOrderConfirmationEmail(customerEmail, "", orderData?.id || "", session.amount_total ? session.amount_total / 100 : 0);
+  }
 }
