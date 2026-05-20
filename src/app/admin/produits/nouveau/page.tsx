@@ -32,6 +32,7 @@ export default function NouveauProduitPage() {
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -88,18 +89,22 @@ export default function NouveauProduitPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setError(null);
     try {
       const response = await fetch("/api/admin/products", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
+      const data = await response.json();
       if (!response.ok) {
-        throw new Error("Failed to create product");
+        setError(data.error || `Erreur ${response.status}`);
+        return;
       }
       router.push("/admin/produits");
-    } catch (error) {
-      console.error("Product creation error:", error);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Erreur de connexion";
+      setError(message);
     } finally {
       setIsSubmitting(false);
     }
@@ -121,6 +126,11 @@ export default function NouveauProduitPage() {
       </div>
 
       <form onSubmit={handleSubmit} className="grid gap-6 lg:grid-cols-3">
+        {error && (
+          <div className="col-span-full rounded-lg bg-red-500/10 border border-red-500/20 p-4 text-sm text-red-400">
+            Erreur: {error}
+          </div>
+        )}
         {/* Main form */}
         <div className="space-y-6 lg:col-span-2">
           {/* Basic info */}

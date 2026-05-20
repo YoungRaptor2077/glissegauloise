@@ -56,6 +56,7 @@ export function RepairForm() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleChange = (
     e: React.ChangeEvent<
@@ -68,18 +69,22 @@ export function RepairForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setError(null);
     try {
       const response = await fetch("/api/repairs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
+      const data = await response.json();
       if (!response.ok) {
-        throw new Error("Failed to submit");
+        setError(data.error || `Erreur ${response.status}`);
+        return;
       }
       setSubmitted(true);
-    } catch (error) {
-      console.error("Repair form error:", error);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Erreur de connexion";
+      setError(message);
     } finally {
       setIsSubmitting(false);
     }
@@ -284,6 +289,11 @@ export function RepairForm() {
       />
 
       {/* Submit */}
+      {error && (
+        <div className="rounded-lg bg-red-500/10 border border-red-500/20 p-4 text-sm text-red-400">
+          {error}
+        </div>
+      )}
       <Button type="submit" size="lg" isLoading={isSubmitting} className="w-full">
         <Send className="h-4 w-4 mr-2" />
         Envoyer la demande
