@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { MessageSquare } from "lucide-react";
+import { MessageSquare, Plus } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/Badge";
 
 interface ConversationWithPreview {
@@ -48,8 +49,34 @@ function getLinkedType(conv: ConversationWithPreview): string | null {
 }
 
 export default function MessagesPage() {
+  const router = useRouter();
   const [conversations, setConversations] = useState<ConversationWithPreview[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showNewForm, setShowNewForm] = useState(false);
+  const [newSubject, setNewSubject] = useState("");
+  const [newMessage, setNewMessage] = useState("");
+  const [sending, setSending] = useState(false);
+
+  async function handleNewMessage(e: React.FormEvent) {
+    e.preventDefault();
+    if (!newSubject.trim() || !newMessage.trim()) return;
+    setSending(true);
+    try {
+      const res = await fetch("/api/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ subject: newSubject, content: newMessage }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        router.push(`/espace-client/messages/${data.conversationId}`);
+      }
+    } catch {
+      // Error
+    } finally {
+      setSending(false);
+    }
+  }
 
   useEffect(() => {
     async function fetchConversations() {
@@ -86,11 +113,65 @@ export default function MessagesPage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
       >
-        <h1 className="text-2xl font-bold text-blanc-casse">Mes messages</h1>
-        <p className="mt-1 text-blanc-casse/60">
-          Consultez vos conversations avec le service client.
-        </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-blanc-casse">Mes messages</h1>
+            <p className="mt-1 text-blanc-casse/60">
+              Consultez vos conversations avec le service client.
+            </p>
+          </div>
+          <button
+            onClick={() => setShowNewForm(true)}
+            className="flex items-center gap-2 rounded-xl bg-vert-neon px-4 py-2.5 text-sm font-semibold text-noir-mat hover:opacity-90 transition-opacity"
+          >
+            <Plus size={16} />
+            Nouveau message
+          </button>
+        </div>
       </motion.div>
+
+      {showNewForm && (
+        <motion.form
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          onSubmit={handleNewMessage}
+          className="p-5 bg-gris-anthracite border border-white/5 rounded-2xl space-y-4"
+        >
+          <h2 className="text-lg font-semibold text-blanc-casse">Nouveau message</h2>
+          <input
+            type="text"
+            value={newSubject}
+            onChange={(e) => setNewSubject(e.target.value)}
+            placeholder="Sujet de votre message"
+            className="w-full rounded-xl border border-white/10 bg-noir-mat px-4 py-2.5 text-sm text-blanc-casse placeholder:text-blanc-casse/40 focus:border-vert-neon/50 focus:outline-none"
+            required
+          />
+          <textarea
+            value={newMessage}
+            onChange={(e) => setNewMessage(e.target.value)}
+            placeholder="Votre message..."
+            rows={4}
+            className="w-full rounded-xl border border-white/10 bg-noir-mat px-4 py-2.5 text-sm text-blanc-casse placeholder:text-blanc-casse/40 focus:border-vert-neon/50 focus:outline-none resize-none"
+            required
+          />
+          <div className="flex items-center gap-3">
+            <button
+              type="submit"
+              disabled={sending}
+              className="rounded-xl bg-vert-neon px-4 py-2.5 text-sm font-semibold text-noir-mat hover:opacity-90 transition-opacity disabled:opacity-50"
+            >
+              {sending ? "Envoi..." : "Envoyer"}
+            </button>
+            <button
+              type="button"
+              onClick={() => { setShowNewForm(false); setNewSubject(""); setNewMessage(""); }}
+              className="rounded-xl border border-white/10 px-4 py-2.5 text-sm font-medium text-blanc-casse/80 hover:bg-gris-anthracite transition-colors"
+            >
+              Annuler
+            </button>
+          </div>
+        </motion.form>
+      )}
 
       {conversations.length === 0 ? (
         <motion.div

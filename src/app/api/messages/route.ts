@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { createServiceClient } from "@/lib/supabase/service";
@@ -83,6 +83,86 @@ export async function GET() {
     return NextResponse.json({ conversations: result });
   } catch (error) {
     console.error("Messages API error:", error);
+    return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const cookieStore = await cookies();
+
+    const supabaseAuth = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return cookieStore.getAll();
+          },
+          setAll() {},
+        },
+      }
+    );
+
+    const {
+      data: { user },
+    } = await supabaseAuth.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ error: "Non authentifie" }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const { subject, content } = body;
+
+    if (!subject || !content) {
+      return NextResponse.json(
+        { error: "Sujet et contenu requis" },
+        { status: 400 }
+      );
+    }
+
+    const supabase = createServiceClient();
+
+    // Create the conversation
+    const { data: conversation, error: convError } = await supabase
+      .from("conversations")
+      .insert({
+        user_id: user.id,
+        subject,
+        status: "open",
+        type: "general",
+      })
+      .select()
+      .single();
+
+    if (convError || !conversation) {
+      console.error("Error creating conversation:", convError);
+      return NextResponse.json(
+        { error: "Erreur lors de la creation de la conversation" },
+        { status: 500 }
+      );
+    }
+
+    // Create the first message
+    const { error: msgError } = await supabase.from("messages").insert({
+      conversation_id: conversation.id,
+      sender_id: user.id,
+      content,
+      is_read: false,
+    });
+
+    if (msgError) {
+      console.error("Error creating message:", msgError);
+      return NextResponse.json(
+        { error: "Erreur lors de la creation du message" },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ conversationId: conversation.id });
+  } catch (error) {
+    console.error("Messages POST error:", error);
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
   }
 }
