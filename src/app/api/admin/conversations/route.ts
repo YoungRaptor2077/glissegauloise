@@ -32,7 +32,7 @@ export async function GET() {
     const { data: conversations } = await supabase
       .from("conversations")
       .select("*")
-      .order("updated_at", { ascending: false });
+      .order("last_message_at", { ascending: false });
 
     if (!conversations || conversations.length === 0) {
       return NextResponse.json({ conversations: [] });
@@ -78,7 +78,7 @@ export async function GET() {
         customerName: profile?.full_name || "Client",
         subject: conv.subject,
         lastMessage: lastMsg?.content || "",
-        date: lastMsg?.created_at || conv.updated_at,
+        date: lastMsg?.created_at || conv.last_message_at || conv.created_at,
         unread: unreadCount || 0,
         status: conv.status,
       });

@@ -35,7 +35,7 @@ export async function GET() {
       .from("conversations")
       .select("*")
       .eq("user_id", user.id)
-      .order("updated_at", { ascending: false });
+      .order("last_message_at", { ascending: false });
 
     if (!conversations || conversations.length === 0) {
       return NextResponse.json({ conversations: [] });
@@ -75,7 +75,7 @@ export async function GET() {
         related_id: (conv as { related_id?: string | null }).related_id || null,
         created_at: conv.created_at,
         lastMessage: lastMsg?.content || null,
-        lastMessageDate: lastMsg?.created_at || conv.updated_at,
+        lastMessageDate: lastMsg?.created_at || conv.last_message_at || conv.created_at,
         unreadCount,
       };
     });

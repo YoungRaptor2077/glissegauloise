@@ -142,10 +142,10 @@ export async function POST(
       return NextResponse.json({ error: "Erreur lors de l'envoi" }, { status: 500 });
     }
 
-    // Update conversation updated_at
+    // Update conversation last_message_at
     await supabase
       .from("conversations")
-      .update({ updated_at: new Date().toISOString() })
+      .update({ last_message_at: new Date().toISOString() })
       .eq("id", id);
 
     return NextResponse.json({ message });
