@@ -60,7 +60,7 @@ function ConnexionForm() {
           const { data, error: oauthError } = await supabase.auth.signInWithOAuth({
             provider: "google",
             options: {
-              redirectTo: "https://glissegauloise.vercel.app/espace-client",
+              redirectTo: "https://glissegauloise.vercel.app/auth/callback?redirect=/espace-client",
             },
           });
           if (oauthError) {
