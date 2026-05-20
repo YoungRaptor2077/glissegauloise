@@ -112,10 +112,10 @@ export function Header() {
                 </span>
               </button>
 
-              {/* User button - desktop only */}
+              {/* User button */}
               <Link
                 href="/espace-client"
-                className="hidden rounded-lg p-2 text-blanc-casse/70 transition-colors hover:bg-gris-anthracite-light hover:text-blanc-casse lg:block"
+                className="rounded-lg p-2 text-blanc-casse/70 transition-colors hover:bg-gris-anthracite-light hover:text-blanc-casse"
                 aria-label="Mon compte"
               >
                 <User size={20} />

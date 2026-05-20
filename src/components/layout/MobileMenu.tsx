@@ -90,10 +90,14 @@ export function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
             </div>
 
             {/* Login button */}
-            <button className="flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-gris-anthracite px-4 py-3 text-sm font-medium text-blanc-casse transition-colors hover:border-vert-neon/30">
+            <Link
+              href="/espace-client"
+              onClick={onClose}
+              className="flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-gris-anthracite px-4 py-3 text-sm font-medium text-blanc-casse transition-colors hover:border-vert-neon/30"
+            >
               <User size={18} />
               Mon compte
-            </button>
+            </Link>
           </div>
         </motion.div>
       )}
