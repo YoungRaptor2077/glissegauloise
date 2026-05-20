@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
+import { NotificationBell } from "@/components/client/NotificationBell";
 
 const navItems = [
   { label: "Tableau de bord", href: "/espace-client", icon: LayoutDashboard },
@@ -181,6 +182,14 @@ export default function EspaceClientLayout({
           <span className="text-sm font-medium text-blanc-casse">
             Espace Client
           </span>
+          <div className="ml-auto">
+            <NotificationBell />
+          </div>
+        </header>
+
+        {/* Desktop Top Bar */}
+        <header className="hidden lg:flex sticky top-0 z-20 items-center justify-end px-8 py-3 bg-noir-mat/80 backdrop-blur-xl border-b border-white/5">
+          <NotificationBell />
         </header>
 
         <main className="p-6 lg:p-8">{children}</main>

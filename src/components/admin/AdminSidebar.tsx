@@ -15,6 +15,8 @@ import {
   Users,
   MessageSquare,
   Star,
+  Gift,
+  Image as ImageIcon,
   Settings,
   ChevronLeft,
   Menu,
@@ -37,6 +39,8 @@ const navItems: NavItem[] = [
   { label: "Tarifs", href: "/admin/tarifs", icon: <CreditCard size={20} /> },
   { label: "Clients", href: "/admin/clients", icon: <Users size={20} /> },
   { label: "Avis", href: "/admin/avis", icon: <Star size={20} /> },
+  { label: "Fidelite", href: "/admin/fidelite", icon: <Gift size={20} /> },
+  { label: "Galerie", href: "/admin/galerie", icon: <ImageIcon size={20} /> },
   { label: "Conversations", href: "/admin/conversations", icon: <MessageSquare size={20} /> },
   { label: "Parametres", href: "/admin/parametres", icon: <Settings size={20} /> },
 ];

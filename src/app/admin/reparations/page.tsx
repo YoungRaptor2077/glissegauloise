@@ -13,6 +13,7 @@ type RepairStatus = "all" | "received" | "diagnostic" | "waiting_parts" | "in_pr
 interface RepairRow {
   id: string;
   rawId: string;
+  userId: string | null;
   client: string;
   equipment: string;
   brand: string;
@@ -164,6 +165,7 @@ export default function ReparationsPage() {
             return {
               id: r.id.substring(0, 8).toUpperCase(),
               rawId: r.id,
+              userId: r.user_id || null,
               client: profile?.full_name || "Client",
               equipment: [r.brand, r.model].filter(Boolean).join(" "),
               brand: r.brand || "",
@@ -201,6 +203,22 @@ export default function ReparationsPage() {
       );
       if (selectedRepair?.rawId === repairId) {
         setSelectedRepair((prev) => prev ? { ...prev, status: newStatus } : null);
+      }
+
+      // Send notification to client
+      const repair = repairs.find((r) => r.rawId === repairId);
+      if (repair?.userId) {
+        fetch("/api/notify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            user_id: repair.userId,
+            title: "Reparation mise a jour",
+            message: `Votre reparation est maintenant : ${statusLabels[newStatus] || newStatus}`,
+            type: "repair_update",
+            link: "/espace-client/reparations",
+          }),
+        });
       }
     } else {
       setError("Erreur lors de la mise a jour du statut de la reparation.");

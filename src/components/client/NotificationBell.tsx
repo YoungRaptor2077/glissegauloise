@@ -1,0 +1,124 @@
+"use client";
+
+import { useState, useRef, useEffect } from "react";
+import { Bell } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+interface Notification {
+  id: string;
+  title: string;
+  message: string;
+  type: string;
+  link: string | null;
+  read: boolean;
+  created_at: string;
+}
+
+export function NotificationBell() {
+  const [isOpen, setIsOpen] = useState(false);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const unreadCount = notifications.filter((n) => !n.read).length;
+
+  useEffect(() => {
+    async function loadNotifications() {
+      try {
+        const res = await fetch("/api/notifications");
+        if (!res.ok) return;
+        const data = await res.json();
+        setNotifications(data.notifications || []);
+      } catch {
+        // silent
+      }
+    }
+    loadNotifications();
+  }, []);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const markAsRead = async (id: string) => {
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === id ? { ...n, read: true } : n))
+    );
+    // We could call an API to mark as read in DB, but keep it simple for now
+  };
+
+  return (
+    <div className="relative" ref={dropdownRef}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="relative rounded-lg p-2 text-blanc-casse/60 transition-colors hover:bg-white/5 hover:text-blanc-casse"
+      >
+        <Bell size={20} />
+        {unreadCount > 0 && (
+          <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-vert-neon text-[10px] font-bold text-noir-mat">
+            {unreadCount}
+          </span>
+        )}
+      </button>
+
+      {isOpen && (
+        <div className="absolute right-0 top-full mt-2 w-80 rounded-xl border border-white/10 bg-gris-anthracite shadow-2xl z-50">
+          <div className="flex items-center justify-between border-b border-white/5 p-4">
+            <h3 className="text-sm font-semibold text-blanc-casse">Notifications</h3>
+            {unreadCount > 0 && (
+              <button
+                onClick={() => setNotifications((prev) => prev.map((n) => ({ ...n, read: true })))}
+                className="text-xs text-vert-neon hover:underline"
+              >
+                Tout marquer lu
+              </button>
+            )}
+          </div>
+          <div className="max-h-80 overflow-y-auto">
+            {notifications.length === 0 ? (
+              <p className="p-4 text-center text-sm text-blanc-casse/40">
+                Aucune notification
+              </p>
+            ) : (
+              notifications.map((notification) => (
+                <button
+                  key={notification.id}
+                  onClick={() => {
+                    markAsRead(notification.id);
+                    if (notification.link) {
+                      window.location.href = notification.link;
+                    }
+                  }}
+                  className={cn(
+                    "w-full border-b border-white/5 p-4 text-left transition-colors hover:bg-white/5 last:border-b-0",
+                    !notification.read && "bg-vert-neon/5"
+                  )}
+                >
+                  <div className="flex items-start gap-3">
+                    {!notification.read && (
+                      <span className="mt-1.5 h-2 w-2 flex-shrink-0 rounded-full bg-vert-neon" />
+                    )}
+                    <div className={cn(!notification.read ? "" : "pl-5")}>
+                      <p className="text-sm font-medium text-blanc-casse">
+                        {notification.title}
+                      </p>
+                      <p className="text-xs text-blanc-casse/60">{notification.message}</p>
+                      <p className="mt-1 text-xs text-blanc-casse/40">
+                        {new Date(notification.created_at).toLocaleDateString("fr-FR")}
+                      </p>
+                    </div>
+                  </div>
+                </button>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
