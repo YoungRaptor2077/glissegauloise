@@ -12,14 +12,52 @@ interface Notification {
   read: boolean;
 }
 
-const initialNotifications: Notification[] = [];
-
 export function NotificationBell() {
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const unreadCount = notifications.filter((n) => !n.read).length;
+
+  useEffect(() => {
+    async function loadNotifications() {
+      try {
+        const res = await fetch("/api/admin/dashboard");
+        if (!res.ok) return;
+        const data = await res.json();
+        const notifs: Notification[] = [];
+
+        if (data.recentOrders) {
+          data.recentOrders.forEach((order: { id: string; total: number; date: string }) => {
+            notifs.push({
+              id: `order-${order.id}`,
+              title: "Nouvelle commande",
+              message: `Commande ${order.id} - ${order.total}\u20AC`,
+              time: order.date,
+              read: false,
+            });
+          });
+        }
+
+        if (data.recentRepairs) {
+          data.recentRepairs.forEach((repair: { id: string; board: string; client: string; date: string }) => {
+            notifs.push({
+              id: `repair-${repair.id}`,
+              title: "Nouvelle reparation",
+              message: `${repair.board} - ${repair.client}`,
+              time: repair.date,
+              read: false,
+            });
+          });
+        }
+
+        setNotifications(notifs);
+      } catch {
+        // Failed to load notifications
+      }
+    }
+    loadNotifications();
+  }, []);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {

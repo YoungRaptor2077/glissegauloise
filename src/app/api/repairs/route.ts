@@ -62,8 +62,8 @@ export async function POST(request: NextRequest) {
       phone: body.telephone || null,
       email: body.email,
       location: body.localisation || null,
-      images: [],
-      videos: [],
+      images: body.images || [],
+      videos: body.videos || [],
       user_id: userId,
     };
 

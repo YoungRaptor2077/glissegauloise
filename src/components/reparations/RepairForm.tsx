@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { FileUpload } from "./FileUpload";
+import { createClient } from "@/lib/supabase/client";
 
 const BRANDS = [
   "Dualtron",
@@ -57,6 +58,8 @@ export function RepairForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [videoFiles, setVideoFiles] = useState<File[]>([]);
 
   const handleChange = (
     e: React.ChangeEvent<
@@ -71,10 +74,37 @@ export function RepairForm() {
     setIsSubmitting(true);
     setError(null);
     try {
+      // Upload files to Supabase Storage
+      const supabase = createClient();
+      const uploadedImages: string[] = [];
+      const uploadedVideos: string[] = [];
+
+      for (const file of imageFiles) {
+        const fileName = `repairs/${Date.now()}-${Math.random().toString(36).slice(2)}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+        const { error: uploadErr } = await supabase.storage.from('uploads').upload(fileName, file);
+        if (!uploadErr) {
+          const { data: urlData } = supabase.storage.from('uploads').getPublicUrl(fileName);
+          uploadedImages.push(urlData.publicUrl);
+        }
+      }
+
+      for (const file of videoFiles) {
+        const fileName = `repairs/${Date.now()}-${Math.random().toString(36).slice(2)}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+        const { error: uploadErr } = await supabase.storage.from('uploads').upload(fileName, file);
+        if (!uploadErr) {
+          const { data: urlData } = supabase.storage.from('uploads').getPublicUrl(fileName);
+          uploadedVideos.push(urlData.publicUrl);
+        }
+      }
+
       const response = await fetch("/api/repairs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+          ...form,
+          images: uploadedImages,
+          videos: uploadedVideos,
+        }),
       });
       const data = await response.json();
       if (!response.ok) {
@@ -222,12 +252,14 @@ export function RepairForm() {
           accept="image/jpeg,image/png,image/webp"
           type="image"
           maxFiles={5}
+          onFilesChange={(files) => setImageFiles(files)}
         />
         <FileUpload
           label="Videos"
           accept="video/mp4,video/quicktime,video/x-msvideo"
           type="video"
           maxFiles={2}
+          onFilesChange={(files) => setVideoFiles(files)}
         />
       </div>
 
