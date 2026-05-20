@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Package, Eye, X, Truck, MapPin } from "lucide-react";
+import { Package, Eye, X, Truck, MapPin, Star, CheckCircle2 } from "lucide-react";
+import Link from "next/link";
 import { Badge } from "@/components/ui/Badge";
 import type { BadgeVariant } from "@/components/ui/Badge";
 import { createClient } from "@/lib/supabase/client";
@@ -170,6 +171,14 @@ export default function CommandesPage() {
                   <p className="text-sm font-semibold text-blanc-casse">
                     {order.total.toFixed(2)} EUR
                   </p>
+                  {order.status === "delivered" && (
+                    <Link
+                      href="/avis"
+                      className="px-3 py-1.5 rounded-lg bg-yellow-500/10 text-xs font-medium text-yellow-400 hover:bg-yellow-500/20 transition-colors flex items-center gap-1"
+                    >
+                      <Star size={12} /> Noter
+                    </Link>
+                  )}
                   <button
                     onClick={() => setSelectedOrder(order)}
                     className="p-2 rounded-lg hover:bg-white/5 text-blanc-casse/60 hover:text-blanc-casse transition-colors"
