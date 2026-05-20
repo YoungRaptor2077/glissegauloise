@@ -5,9 +5,6 @@ import { motion } from "framer-motion";
 import { MessageSquare } from "lucide-react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/Badge";
-import { createClient } from "@/lib/supabase/client";
-import { useUser } from "@/lib/hooks/useUser";
-import type { Conversation, Message } from "@/types/database";
 
 interface ConversationWithPreview {
   id: string;
@@ -51,79 +48,30 @@ function getLinkedType(conv: ConversationWithPreview): string | null {
 }
 
 export default function MessagesPage() {
-  const { user, loading: userLoading } = useUser();
   const [conversations, setConversations] = useState<ConversationWithPreview[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchConversations() {
-      if (!user) return;
-      const supabase = createClient();
-
-      // Fetch conversations
-      const { data: convs } = (await supabase
-        .from("conversations")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("updated_at", { ascending: false })) as { data: Conversation[] | null };
-
-      if (!convs || convs.length === 0) {
-        setConversations([]);
+      try {
+        const res = await fetch("/api/messages");
+        if (!res.ok) {
+          setLoading(false);
+          return;
+        }
+        const data = await res.json();
+        setConversations(data.conversations || []);
+      } catch (err) {
+        console.error("Error fetching conversations:", err);
+      } finally {
         setLoading(false);
-        return;
       }
-
-      // For each conversation, fetch last message and unread count
-      const convIds = convs.map((c) => c.id);
-
-      const { data: allMessages } = (await supabase
-        .from("messages")
-        .select("*")
-        .in("conversation_id", convIds)
-        .order("created_at", { ascending: false })) as { data: Message[] | null };
-
-      const messagesMap: Record<string, Message[]> = {};
-      if (allMessages) {
-        allMessages.forEach((msg) => {
-          if (!messagesMap[msg.conversation_id]) {
-            messagesMap[msg.conversation_id] = [];
-          }
-          messagesMap[msg.conversation_id].push(msg);
-        });
-      }
-
-      const result: ConversationWithPreview[] = convs.map((conv) => {
-        const msgs = messagesMap[conv.id] || [];
-        const lastMsg = msgs[0] || null;
-        const unreadCount = msgs.filter(
-          (m) => !m.is_read && m.sender_id !== user.id
-        ).length;
-
-        return {
-          id: conv.id,
-          subject: conv.subject,
-          status: conv.status,
-          type: conv.type,
-          related_id: conv.related_id,
-          created_at: conv.created_at,
-          lastMessage: lastMsg?.content || null,
-          lastMessageDate: lastMsg?.created_at || conv.updated_at,
-          unreadCount,
-        };
-      });
-
-      setConversations(result);
-      setLoading(false);
     }
 
-    if (!userLoading && user) {
-      fetchConversations();
-    } else if (!userLoading && !user) {
-      setLoading(false);
-    }
-  }, [user, userLoading]);
+    fetchConversations();
+  }, []);
 
-  if (userLoading || loading) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
         <div className="h-8 w-8 border-2 border-vert-neon border-t-transparent rounded-full animate-spin" />

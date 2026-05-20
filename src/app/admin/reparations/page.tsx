@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { DataTable, type Column } from "@/components/admin/DataTable";
-import { X } from "lucide-react";
+import { X, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import type { Repair, Profile } from "@/types/database";
@@ -129,6 +129,28 @@ export default function ReparationsPage() {
     }
   };
 
+  const handleDelete = async (repairId: string) => {
+    if (!confirm("Supprimer cette reparation et ses conversations associees ?")) return;
+    setError(null);
+
+    try {
+      const res = await fetch(`/api/admin/repairs/${repairId}`, {
+        method: "DELETE",
+      });
+
+      if (res.ok) {
+        setRepairs((prev) => prev.filter((r) => r.rawId !== repairId));
+        if (selectedRepair?.rawId === repairId) {
+          setSelectedRepair(null);
+        }
+      } else {
+        setError("Erreur lors de la suppression de la reparation.");
+      }
+    } catch {
+      setError("Erreur lors de la suppression de la reparation.");
+    }
+  };
+
   const filteredRepairs = activeTab === "all"
     ? repairs
     : repairs.filter((r) => r.status === activeTab);
@@ -210,20 +232,32 @@ export default function ReparationsPage() {
         searchPlaceholder="Rechercher une reparation..."
         onRowClick={(row) => setSelectedRepair(row)}
         actions={(row) => (
-          <select
-            value={row.status}
-            onChange={(e) => {
-              handleStatusChange(row.rawId, e.target.value);
-            }}
-            onClick={(e) => e.stopPropagation()}
-            className="rounded-lg border border-white/10 bg-gris-anthracite px-2 py-1 text-xs text-blanc-casse focus:border-vert-neon/50 focus:outline-none"
-          >
-            {statusOrder.map((s) => (
-              <option key={s} value={s}>
-                {statusLabels[s]}
-              </option>
-            ))}
-          </select>
+          <div className="flex items-center gap-2">
+            <select
+              value={row.status}
+              onChange={(e) => {
+                handleStatusChange(row.rawId, e.target.value);
+              }}
+              onClick={(e) => e.stopPropagation()}
+              className="rounded-lg border border-white/10 bg-gris-anthracite px-2 py-1 text-xs text-blanc-casse focus:border-vert-neon/50 focus:outline-none"
+            >
+              {statusOrder.map((s) => (
+                <option key={s} value={s}>
+                  {statusLabels[s]}
+                </option>
+              ))}
+            </select>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDelete(row.rawId);
+              }}
+              className="rounded-lg p-1.5 text-blanc-casse/40 hover:bg-red-500/10 hover:text-red-400 transition-colors"
+              title="Supprimer"
+            >
+              <Trash2 size={15} />
+            </button>
+          </div>
         )}
       />
 

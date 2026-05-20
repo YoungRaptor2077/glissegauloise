@@ -8,14 +8,6 @@ import { useParams } from "next/navigation";
 import { ChatBubble } from "@/components/messages/ChatBubble";
 import { ChatInput } from "@/components/messages/ChatInput";
 import { Badge } from "@/components/ui/Badge";
-import { createClient } from "@/lib/supabase/client";
-import { useUser } from "@/lib/hooks/useUser";
-import {
-  subscribeToMessages,
-  unsubscribeChannel,
-} from "@/lib/supabase/realtime";
-import type { RealtimeMessage } from "@/lib/supabase/realtime";
-import type { Conversation, Message } from "@/types/database";
 
 interface MessageItem {
   id: string;
@@ -44,12 +36,12 @@ function formatTimestamp(dateStr: string): string {
 export default function ConversationDetailPage() {
   const params = useParams();
   const conversationId = params.id as string;
-  const { user, loading: userLoading } = useUser();
 
   const [messages, setMessages] = useState<MessageItem[]>([]);
   const [conversation, setConversation] = useState<ConversationInfo | null>(
     null
   );
+  const [userId, setUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [unauthorized, setUnauthorized] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -66,135 +58,111 @@ export default function ConversationDetailPage() {
   // Fetch conversation and messages
   useEffect(() => {
     async function fetchData() {
-      if (!conversationId || !user) return;
-      const supabase = createClient();
+      if (!conversationId) return;
 
-      // Fetch conversation and verify ownership
-      const { data: conv } = (await supabase
-        .from("conversations")
-        .select("*")
-        .eq("id", conversationId)
-        .single()) as { data: Conversation | null };
+      try {
+        const res = await fetch(`/api/messages/${conversationId}`);
 
-      if (!conv) {
-        setLoading(false);
-        return;
-      }
-
-      // Security: verify user owns this conversation
-      if (conv.user_id !== user.id) {
-        setUnauthorized(true);
-        setLoading(false);
-        return;
-      }
-
-      setConversation({
-        id: conv.id,
-        subject: conv.subject,
-        status: conv.status,
-        type: conv.type,
-        related_id: conv.related_id,
-      });
-
-      // Fetch messages
-      const { data: msgs } = (await supabase
-        .from("messages")
-        .select("*")
-        .eq("conversation_id", conversationId)
-        .order("created_at", { ascending: true })) as {
-        data: Message[] | null;
-      };
-
-      if (msgs) {
-        setMessages(msgs);
-      }
-
-      // Mark unread messages from admin as read
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error: markError } = await (supabase.from("messages") as any)
-        .update({ is_read: true })
-        .eq("conversation_id", conversationId)
-        .eq("is_read", false)
-        .neq("sender_id", user.id);
-      if (markError) {
-        console.error("Failed to mark messages as read:", markError);
-      }
-
-      setLoading(false);
-    }
-
-    if (!userLoading && user) {
-      fetchData();
-    } else if (!userLoading && !user) {
-      setLoading(false);
-    }
-  }, [conversationId, user, userLoading]);
-
-  // Subscribe to realtime messages
-  useEffect(() => {
-    if (!conversationId || !user) return;
-
-    const channel = subscribeToMessages(
-      conversationId,
-      (newMsg: RealtimeMessage) => {
-        setMessages((prev) => {
-          // Avoid duplicates
-          if (prev.some((m) => m.id === newMsg.id)) return prev;
-          return [...prev, newMsg];
-        });
-
-        // Mark as read if from admin (not sent by current user)
-        if (newMsg.sender_id !== user.id) {
-          const supabase = createClient();
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (supabase.from("messages") as any)
-            .update({ is_read: true })
-            .eq("id", newMsg.id)
-            .then(() => {})
-            .catch((err: unknown) => {
-              console.error("Failed to mark message as read:", err);
-            });
+        if (res.status === 401) {
+          setLoading(false);
+          return;
         }
-      }
-    );
 
-    return () => {
-      unsubscribeChannel(channel);
-    };
-  }, [conversationId, user]);
+        if (res.status === 403) {
+          setUnauthorized(true);
+          setLoading(false);
+          return;
+        }
+
+        if (res.status === 404) {
+          setLoading(false);
+          return;
+        }
+
+        if (!res.ok) {
+          setLoading(false);
+          return;
+        }
+
+        const data = await res.json();
+        setConversation(data.conversation);
+        setMessages(data.messages || []);
+
+        // Extract user ID from messages (sender that is not admin)
+        if (data.messages && data.messages.length > 0) {
+          const clientMsg = data.messages.find(
+            (m: MessageItem & { is_admin?: boolean }) => !m.is_admin
+          );
+          if (clientMsg) {
+            setUserId(clientMsg.sender_id);
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching conversation:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchData();
+  }, [conversationId]);
+
+  // Poll for new messages every 5 seconds
+  useEffect(() => {
+    if (!conversationId || !conversation) return;
+
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/messages/${conversationId}`);
+        if (res.ok) {
+          const data = await res.json();
+          setMessages(data.messages || []);
+          if (data.conversation) {
+            setConversation(data.conversation);
+          }
+        }
+      } catch (err) {
+        console.error("Polling error:", err);
+      }
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [conversationId, conversation]);
 
   const handleSend = useCallback(
     async (content: string) => {
-      if (!user || !conversationId) return;
+      if (!conversationId) return;
       setError(null);
-      const supabase = createClient();
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = (await (supabase.from("messages") as any)
-        .insert({
-          conversation_id: conversationId,
-          sender_id: user.id,
-          content,
-          is_admin: false,
-          attachments: [],
-          is_read: false,
-        })
-        .select()
-        .single()) as { data: Message | null; error: unknown };
-
-      if (!error && data) {
-        setMessages((prev) => {
-          if (prev.some((m) => m.id === data.id)) return prev;
-          return [...prev, data];
+      try {
+        const res = await fetch(`/api/messages/${conversationId}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ content }),
         });
-      } else if (error) {
+
+        if (res.ok) {
+          const data = await res.json();
+          if (data.message) {
+            setMessages((prev) => {
+              if (prev.some((m) => m.id === data.message.id)) return prev;
+              return [...prev, data.message];
+            });
+            if (!userId) {
+              setUserId(data.message.sender_id);
+            }
+          }
+        } else {
+          setError("Erreur lors de l'envoi du message.");
+        }
+      } catch {
         setError("Erreur lors de l'envoi du message.");
       }
     },
-    [user, conversationId]
+    [conversationId, userId]
   );
 
-  if (userLoading || loading) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center h-[calc(100vh-12rem)]">
         <div className="h-8 w-8 border-2 border-vert-neon border-t-transparent rounded-full animate-spin" />
@@ -271,9 +239,9 @@ export default function ConversationDetailPage() {
             key={msg.id}
             content={msg.content}
             timestamp={formatTimestamp(msg.created_at)}
-            isSent={msg.sender_id === user?.id}
+            isSent={msg.sender_id === userId}
             senderName={
-              msg.sender_id !== user?.id ? "GlisseGauloise" : undefined
+              msg.sender_id !== userId ? "GlisseGauloise" : undefined
             }
             isRead={msg.is_read}
           />
