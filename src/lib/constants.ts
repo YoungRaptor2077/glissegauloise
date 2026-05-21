@@ -42,6 +42,7 @@ export const NAV_LINKS = [
   { label: "Accueil", href: "/" },
   { label: "Boutique", href: "/boutique" },
   { label: "Reparations", href: "/reparations" },
+  { label: "Diagnostic", href: "/diagnostic" },
   { label: "Demander un devis", href: "/reparations#devis" },
   { label: "Tarifs", href: "/tarifs" },
   { label: "Contact", href: "/contact" },
