@@ -7,6 +7,7 @@ import { Search, ShoppingCart, User, Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { NAV_LINKS } from "@/lib/constants";
 import { useWorkshopStatus } from "@/lib/hooks/useWorkshopStatus";
+import { useCart } from "@/lib/hooks/useCart";
 import { MobileMenu } from "./MobileMenu";
 import { SearchModal } from "./SearchModal";
 
@@ -15,6 +16,7 @@ export function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const { isOpen: workshopIsOpen } = useWorkshopStatus();
+  const { itemCount, openCart } = useCart();
 
   useEffect(() => {
     function handleScroll() {
@@ -103,13 +105,16 @@ export function Header() {
 
               {/* Cart button */}
               <button
+                onClick={openCart}
                 className="relative rounded-lg p-2 text-blanc-casse/70 transition-colors hover:bg-gris-anthracite-light hover:text-blanc-casse"
                 aria-label="Panier"
               >
                 <ShoppingCart size={20} />
-                <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-vert-neon text-[10px] font-bold text-noir-mat">
-                  0
-                </span>
+                {itemCount > 0 && (
+                  <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-vert-neon text-[10px] font-bold text-noir-mat">
+                    {itemCount}
+                  </span>
+                )}
               </button>
 
               {/* User button */}

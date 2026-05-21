@@ -153,7 +153,7 @@ export default function ProductDetailPage() {
                     />
                   ))}
                 </div>
-                <span className="text-sm text-blanc-casse/50">(12 avis)</span>
+                <span className="text-sm text-blanc-casse/50">(0 avis)</span>
               </div>
             </div>
 
