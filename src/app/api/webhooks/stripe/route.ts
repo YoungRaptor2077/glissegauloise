@@ -108,4 +108,32 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       .single();
     sendOrderConfirmationEmail(customerEmail, "", orderData?.id || "", session.amount_total ? session.amount_total / 100 : 0);
   }
+
+  // Add loyalty points (1 point per euro spent)
+  if (userId && session.amount_total) {
+    const totalEuros = Math.floor(session.amount_total / 100);
+    if (totalEuros > 0) {
+      // Get loyalty settings for points_per_euro
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: settings } = await (supabase.from("loyalty_settings") as any)
+        .select("points_per_euro")
+        .limit(1)
+        .single();
+      const pointsPerEuro = settings?.points_per_euro || 1;
+      const pointsToAdd = totalEuros * pointsPerEuro;
+
+      // Increment user's loyalty points
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: currentProfile } = await (supabase.from("profiles") as any)
+        .select("loyalty_points")
+        .eq("id", userId)
+        .single();
+      const currentPoints = currentProfile?.loyalty_points || 0;
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabase.from("profiles") as any)
+        .update({ loyalty_points: currentPoints + pointsToAdd })
+        .eq("id", userId);
+    }
+  }
 }

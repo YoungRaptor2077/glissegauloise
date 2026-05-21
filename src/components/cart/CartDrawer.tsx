@@ -119,9 +119,11 @@ export function CartDrawer() {
                     {total.toFixed(2)} EUR
                   </span>
                 </div>
-                <Button className="w-full" size="lg">
-                  Commander
-                </Button>
+                <a href="/checkout" onClick={closeCart} className="block w-full">
+                  <Button className="w-full" size="lg">
+                    Commander
+                  </Button>
+                </a>
                 <p className="text-xs text-center text-blanc-casse/40">
                   Livraison calculée à l&apos;étape suivante
                 </p>

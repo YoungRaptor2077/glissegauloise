@@ -156,6 +156,110 @@ export default function AdminFidelitePage() {
           {saving ? "Sauvegarde..." : "Sauvegarder"}
         </button>
       </motion.div>
+
+      {/* Manual points section */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+        className="rounded-2xl border border-white/5 bg-gris-anthracite p-6 space-y-4"
+      >
+        <h2 className="text-lg font-semibold text-blanc-casse">Ajouter des points manuellement</h2>
+        <p className="text-sm text-blanc-casse/50">
+          Pour les paiements en boutique ou les reparations payees en main propre.
+        </p>
+        <ManualPointsForm />
+      </motion.div>
     </div>
+  );
+}
+
+function ManualPointsForm() {
+  const [email, setEmail] = useState("");
+  const [points, setPoints] = useState("");
+  const [reason, setReason] = useState("");
+  const [result, setResult] = useState<{ type: "success" | "error"; message: string } | null>(null);
+  const [sending, setSending] = useState(false);
+
+  async function handleAddPoints(e: React.FormEvent) {
+    e.preventDefault();
+    if (!email || !points) return;
+    setSending(true);
+    setResult(null);
+
+    try {
+      // First find user by email
+      const res = await fetch("/api/admin/loyalty/points", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email,
+          points: parseInt(points),
+          reason,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setResult({ type: "success", message: `${data.pointsAdded} points ajoutes a ${data.clientName || email}. Nouveau total : ${data.newTotal}` });
+        setEmail("");
+        setPoints("");
+        setReason("");
+      } else {
+        setResult({ type: "error", message: data.error || "Erreur" });
+      }
+    } catch {
+      setResult({ type: "error", message: "Erreur de connexion" });
+    }
+    setSending(false);
+  }
+
+  return (
+    <form onSubmit={handleAddPoints} className="space-y-3">
+      <div>
+        <label className="block text-sm font-medium text-blanc-casse/70 mb-1.5">Email du client</label>
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="client@email.com"
+          required
+          className="w-full rounded-xl border border-white/10 bg-noir-mat px-4 py-3 text-sm text-blanc-casse placeholder:text-blanc-casse/40 focus:border-vert-neon/50 focus:outline-none"
+        />
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-blanc-casse/70 mb-1.5">Points a ajouter</label>
+        <input
+          type="number"
+          min="1"
+          value={points}
+          onChange={(e) => setPoints(e.target.value)}
+          placeholder="Ex: 50 (pour 50 EUR)"
+          required
+          className="w-full rounded-xl border border-white/10 bg-noir-mat px-4 py-3 text-sm text-blanc-casse placeholder:text-blanc-casse/40 focus:border-vert-neon/50 focus:outline-none"
+        />
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-blanc-casse/70 mb-1.5">Raison (optionnel)</label>
+        <input
+          type="text"
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+          placeholder="Ex: Reparation pneu payee en boutique"
+          className="w-full rounded-xl border border-white/10 bg-noir-mat px-4 py-3 text-sm text-blanc-casse placeholder:text-blanc-casse/40 focus:border-vert-neon/50 focus:outline-none"
+        />
+      </div>
+      {result && (
+        <div className={`rounded-xl border px-4 py-3 text-sm ${result.type === "success" ? "border-vert-neon/20 bg-vert-neon/10 text-vert-neon" : "border-red-500/20 bg-red-500/10 text-red-400"}`}>
+          {result.message}
+        </div>
+      )}
+      <button
+        type="submit"
+        disabled={sending}
+        className="rounded-xl bg-vert-neon/10 px-5 py-2.5 text-sm font-medium text-vert-neon hover:bg-vert-neon/20 transition-colors disabled:opacity-50"
+      >
+        {sending ? "Ajout..." : "Ajouter les points"}
+      </button>
+    </form>
   );
 }
