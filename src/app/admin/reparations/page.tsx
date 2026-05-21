@@ -527,6 +527,55 @@ export default function ReparationsPage() {
               </div>
             </div>
 
+            {/* Deposit / Acompte */}
+            {selectedRepair.status !== "closed" && (
+              <div className="rounded-xl border border-yellow-500/10 bg-yellow-500/5 p-4">
+                <h3 className="text-sm font-medium text-yellow-400 mb-2">Demander un acompte</h3>
+                <p className="text-xs text-blanc-casse/50 mb-3">Envoyer un lien de paiement au client pour un acompte (50% ou montant libre)</p>
+                <div className="flex gap-2">
+                  <input
+                    type="number"
+                    min="1"
+                    step="0.01"
+                    id="deposit-amount-input"
+                    placeholder="Montant EUR"
+                    defaultValue={selectedRepair.estimatedCost ? (selectedRepair.estimatedCost / 2).toFixed(0) : ""}
+                    className="flex-1 rounded-lg border border-white/10 bg-gris-anthracite px-3 py-2 text-sm text-blanc-casse placeholder:text-blanc-casse/40 focus:border-yellow-500/50 focus:outline-none"
+                  />
+                  <button
+                    onClick={async () => {
+                      const input = document.getElementById("deposit-amount-input") as HTMLInputElement;
+                      const amount = parseFloat(input.value);
+                      if (!amount || amount <= 0) { alert("Entrez un montant"); return; }
+                      
+                      const res = await fetch("/api/admin/payment-link", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          amount,
+                          repairId: selectedRepair.rawId,
+                          clientEmail: selectedRepair.email,
+                          clientName: selectedRepair.client,
+                          description: `Acompte - ${selectedRepair.brand} ${selectedRepair.equipment}`,
+                        }),
+                      });
+                      const data = await res.json();
+                      if (data.url) {
+                        // Copy link to clipboard
+                        navigator.clipboard.writeText(data.url);
+                        alert(`Lien de paiement copie ! (${amount} EUR)\n\nEnvoyez-le au client par message ou email.\n\nLien: ${data.url}`);
+                      } else {
+                        alert("Erreur: " + (data.error || "Impossible de creer le lien"));
+                      }
+                    }}
+                    className="shrink-0 rounded-lg bg-yellow-500 px-3 py-2 text-xs font-semibold text-noir-mat hover:bg-yellow-400 transition-colors"
+                  >
+                    Generer le lien
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Client Review */}
             <ClientReviewSection repairId={selectedRepair.rawId} />
 
