@@ -259,6 +259,25 @@ export default function DevisPage() {
                 </button>
               </>
             )}
+            <button
+              onClick={async (e) => {
+                e.stopPropagation();
+                if (!confirm("Supprimer ce devis definitivement ?")) return;
+                const res = await fetch("/api/admin/quotes/delete", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ quoteId: row.rawId }),
+                });
+                if (res.ok) {
+                  setQuotes((prev) => prev.filter((q) => q.rawId !== row.rawId));
+                } else {
+                  alert("Erreur lors de la suppression");
+                }
+              }}
+              className="rounded-lg bg-red-500/10 px-2 py-1 text-xs font-medium text-red-400 hover:bg-red-500/20"
+            >
+              Supprimer
+            </button>
           </div>
         )}
       />
