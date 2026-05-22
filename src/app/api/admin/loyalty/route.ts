@@ -3,7 +3,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 
 const DEFAULT_SETTINGS = {
   points_per_euro: 1,
-  reward_threshold: 100,
+  reward_threshold: 250,
   reward_percent: 10,
 };
 

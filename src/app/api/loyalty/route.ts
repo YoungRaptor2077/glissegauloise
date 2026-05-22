@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
       .single();
 
     const pointsPerEuro = settings?.points_per_euro || 1;
-    const rewardThreshold = settings?.reward_threshold || 100;
+    const rewardThreshold = settings?.reward_threshold || 250;
     const rewardPercent = settings?.reward_percent || 10;
 
     // Calculate progress
