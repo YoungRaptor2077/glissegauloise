@@ -14,6 +14,12 @@ interface LoyaltyData {
   hasReward: boolean;
 }
 
+function getTier(points: number): { name: string; color: string; emoji: string } {
+  if (points >= 100) return { name: "Or", color: "text-yellow-400", emoji: "\u{1F947}" };
+  if (points >= 50) return { name: "Argent", color: "text-gray-300", emoji: "\u{1F948}" };
+  return { name: "Bronze", color: "text-orange-400", emoji: "\u{1F949}" };
+}
+
 export function LoyaltyCard() {
   const [data, setData] = useState<LoyaltyData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -69,6 +75,17 @@ export function LoyaltyCard() {
         <span className="text-3xl font-bold text-blanc-casse">{data.points}</span>
         <span className="text-sm text-blanc-casse/50 mb-1">points</span>
       </div>
+
+      {/* Tier Badge */}
+      {(() => {
+        const tier = getTier(data.points);
+        return (
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-lg">{tier.emoji}</span>
+            <span className={`text-sm font-semibold ${tier.color}`}>Niveau {tier.name}</span>
+          </div>
+        );
+      })()}
 
       {/* Progress Bar */}
       <div className="mb-3">

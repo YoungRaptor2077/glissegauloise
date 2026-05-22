@@ -82,14 +82,25 @@ export default function AvisPage() {
           </div>
 
           <div className="pt-4 space-y-3">
-            <a
-              href="https://www.google.com/maps/search/GlisseGauloisse+Eaubonne+95600"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block w-full rounded-xl bg-vert-neon px-4 py-3 text-sm font-semibold text-noir-mat hover:opacity-90 transition-opacity"
+            <div className="p-4 rounded-xl bg-yellow-500/5 border border-yellow-500/20 mb-3">
+              <p className="text-sm text-yellow-400 font-medium mb-1">🎁 Bonus fidelite !</p>
+              <p className="text-xs text-blanc-casse/60">
+                Laissez un avis sur Google et recevez <strong className="text-yellow-400">20 points bonus</strong> (premiere fois uniquement)
+              </p>
+            </div>
+            <button
+              onClick={async () => {
+                // Give bonus points for Google review
+                try {
+                  await fetch("/api/loyalty/google-bonus", { method: "POST" });
+                } catch {}
+                // Open Google Maps
+                window.open("https://www.google.com/maps/search/GlisseGauloisse+Eaubonne+95600", "_blank");
+              }}
+              className="block w-full rounded-xl bg-vert-neon px-4 py-3 text-sm font-semibold text-noir-mat hover:opacity-90 transition-opacity text-center"
             >
-              Laisser un avis sur Google ⭐
-            </a>
+              Laisser un avis sur Google ⭐ (+20 points)
+            </button>
             <p className="text-xs text-blanc-casse/40">
               Un avis Google nous aide enormement a etre visible localement
             </p>
