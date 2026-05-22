@@ -19,6 +19,7 @@ interface QuoteRow {
   total: number;
   validUntil: string;
   createdAt: string;
+  paymentUrl: string | null;
   [key: string]: unknown;
 }
 
@@ -87,6 +88,8 @@ export default function DevisPage() {
               total: q.total,
               validUntil: new Date(q.valid_until).toLocaleDateString("fr-FR"),
               createdAt: new Date(q.created_at).toLocaleDateString("fr-FR"),
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              paymentUrl: (q as any).payment_url || null,
             };
           })
         );
@@ -222,6 +225,21 @@ export default function DevisPage() {
             )}
             {row.status === "sent" && (
               <>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const quote = quotes.find(q => q.rawId === row.rawId);
+                    if (quote?.paymentUrl) {
+                      navigator.clipboard.writeText(quote.paymentUrl);
+                      alert("Lien de paiement copie !");
+                    } else {
+                      alert("Pas de lien de paiement pour ce devis");
+                    }
+                  }}
+                  className="rounded-lg bg-blue-500/10 px-2 py-1 text-xs font-medium text-blue-400 hover:bg-blue-500/20"
+                >
+                  Copier lien
+                </button>
                 <button
                   onClick={(e) => {
                     e.stopPropagation();

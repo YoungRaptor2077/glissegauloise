@@ -144,4 +144,36 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       .update({ loyalty_points: 0 })
       .eq("id", userId);
   }
+
+  // Handle quote payment
+  const quoteId = session.metadata?.quote_id;
+  if (quoteId) {
+    // Mark quote as accepted
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase.from("quotes") as any)
+      .update({ status: "accepted" })
+      .eq("id", quoteId);
+
+    // Add loyalty points for the quote payment
+    const quoteUserId = session.metadata?.user_id;
+    if (quoteUserId) {
+      const amountPaid = session.amount_total ? session.amount_total / 100 : 0;
+      const pointsToAdd = Math.floor(amountPaid);
+
+      if (pointsToAdd > 0) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: quoteProfile } = await (supabase.from("profiles") as any)
+          .select("loyalty_points")
+          .eq("id", quoteUserId)
+          .single();
+
+        const currentQuotePoints = quoteProfile?.loyalty_points || 0;
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (supabase.from("profiles") as any)
+          .update({ loyalty_points: currentQuotePoints + pointsToAdd })
+          .eq("id", quoteUserId);
+      }
+    }
+  }
 }

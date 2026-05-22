@@ -111,12 +111,18 @@ export default function NouveauDevisPage() {
       }
 
       if (sendAfterSave && data.quote?.id) {
-        await fetch("/api/admin/quotes/send", {
+        const sendRes = await fetch("/api/admin/quotes/send", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ quoteId: data.quote.id }),
         });
-        setSuccess("Devis cree et envoye !");
+        const sendData = await sendRes.json();
+        if (sendData?.paymentUrl) {
+          navigator.clipboard.writeText(sendData.paymentUrl);
+          setSuccess("Devis cree et envoye ! Lien de paiement copie dans le presse-papier.");
+        } else {
+          setSuccess("Devis cree et envoye !");
+        }
       } else {
         setSuccess("Devis enregistre !");
       }
