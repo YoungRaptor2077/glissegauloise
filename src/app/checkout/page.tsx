@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { ShoppingBag, Truck, CreditCard, Loader2 } from "lucide-react";
 import { useCart } from "@/lib/hooks/useCart";
@@ -10,6 +10,8 @@ import Link from "next/link";
 export default function CheckoutPage() {
   const { items, total } = useCart();
   const [isLoading, setIsLoading] = useState(false);
+  const [loyaltyData, setLoyaltyData] = useState<{ hasReward: boolean; rewardPercent: number; points: number } | null>(null);
+  const [discountApplied, setDiscountApplied] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -20,7 +22,22 @@ export default function CheckoutPage() {
   });
 
   const shippingCost = total >= 100 ? 0 : 5.9;
-  const orderTotal = total + shippingCost;
+  const discountPercent = discountApplied && loyaltyData?.hasReward ? loyaltyData.rewardPercent : 0;
+  const discountAmount = (total * discountPercent) / 100;
+  const orderTotal = total - discountAmount + shippingCost;
+
+  useEffect(() => {
+    async function checkLoyalty() {
+      try {
+        const res = await fetch("/api/loyalty");
+        if (res.ok) {
+          const data = await res.json();
+          setLoyaltyData(data);
+        }
+      } catch {}
+    }
+    checkLoyalty();
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -50,6 +67,7 @@ export default function CheckoutPage() {
             postalCode: formData.postalCode,
             country: formData.country,
           },
+          discount: discountApplied ? discountPercent : 0,
         }),
       });
 
@@ -253,6 +271,12 @@ export default function CheckoutPage() {
                       : `${shippingCost.toFixed(2)} EUR`}
                   </span>
                 </div>
+                {discountApplied && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-vert-neon">Remise fidelite (-{discountPercent}%)</span>
+                    <span className="text-vert-neon">-{discountAmount.toFixed(2)} EUR</span>
+                  </div>
+                )}
                 <div className="flex justify-between text-lg font-bold pt-2 border-t border-white/5">
                   <span className="text-blanc-casse">Total</span>
                   <span className="text-vert-neon">
@@ -260,6 +284,21 @@ export default function CheckoutPage() {
                   </span>
                 </div>
               </div>
+
+              {loyaltyData?.hasReward && !discountApplied && (
+                <div className="p-4 rounded-xl border border-vert-neon/20 bg-vert-neon/5 mb-4 mt-4">
+                  <p className="text-sm text-vert-neon font-medium mb-2">
+                    Vous avez droit a {loyaltyData.rewardPercent}% de remise !
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setDiscountApplied(true)}
+                    className="text-xs font-semibold text-noir-mat bg-vert-neon px-4 py-2 rounded-lg hover:opacity-90 transition-opacity"
+                  >
+                    Appliquer ma remise fidelite
+                  </button>
+                </div>
+              )}
 
               <button
                 type="submit"

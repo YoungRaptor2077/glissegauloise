@@ -136,4 +136,12 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
         .eq("id", userId);
     }
   }
+
+  // If a discount was applied, reset points (reward used)
+  if (session.total_details?.breakdown?.discounts && session.total_details.breakdown.discounts.length > 0 && userId) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase.from("profiles") as any)
+      .update({ loyalty_points: 0 })
+      .eq("id", userId);
+  }
 }

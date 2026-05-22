@@ -16,6 +16,7 @@ export async function POST(request: NextRequest) {
     const { items, customerEmail, shippingAddress } = body as {
       items: CartItemPayload[];
       customerEmail?: string;
+      discount?: number;
       shippingAddress?: {
         name: string;
         address: string;
@@ -79,6 +80,17 @@ export async function POST(request: NextRequest) {
 
     const origin = request.headers.get("origin") || "http://localhost:3000";
 
+    // Apply loyalty discount if provided
+    let discounts: { coupon: string }[] = [];
+    const discount = body.discount || 0;
+    if (discount > 0) {
+      const coupon = await stripe.coupons.create({
+        percent_off: discount,
+        duration: "once",
+      });
+      discounts = [{ coupon: coupon.id }];
+    }
+
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       line_items: lineItems,
@@ -133,6 +145,7 @@ export async function POST(request: NextRequest) {
           },
         },
       ],
+      ...(discounts.length > 0 && { discounts }),
     });
 
     return NextResponse.json({ sessionId: session.id, url: session.url });

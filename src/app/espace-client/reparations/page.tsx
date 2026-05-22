@@ -196,7 +196,7 @@ export default function ReparationsPage() {
                     >
                       <MessageSquare className="h-4 w-4" />
                     </Link>
-                    {repair.status === "ready_pickup" && (
+                    {(repair.status === "completed" || repair.status === "ready_pickup" || repair.status === "closed") && (
                       <Link
                         href={`/avis?repair_id=${repair.id}`}
                         className="px-3 py-1.5 rounded-lg bg-yellow-500/10 text-xs font-medium text-yellow-400 hover:bg-yellow-500/20 transition-colors"
