@@ -2,19 +2,27 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { FileText, Check, X } from "lucide-react";
+import { FileText, CreditCard, CheckCircle2 } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
-import { Button } from "@/components/ui/Button";
 import type { BadgeVariant } from "@/components/ui/Badge";
 import { createClient } from "@/lib/supabase/client";
 import { useUser } from "@/lib/hooks/useUser";
-import type { Quote } from "@/types/database";
+
+interface ClientQuote {
+  id: string;
+  status: string;
+  total: number;
+  payment_url: string | null;
+  valid_until: string;
+  created_at: string;
+  notes: string | null;
+}
 
 const statusConfig: Record<string, { label: string; variant: BadgeVariant }> = {
   draft: { label: "Brouillon", variant: "default" },
-  sent: { label: "En attente", variant: "warning" },
-  accepted: { label: "Accepte", variant: "success" },
-  rejected: { label: "Refuse", variant: "error" },
+  sent: { label: "A payer", variant: "warning" },
+  accepted: { label: "Paye", variant: "success" },
+  rejected: { label: "Annule", variant: "error" },
   expired: { label: "Expire", variant: "default" },
 };
 
@@ -29,20 +37,19 @@ function formatDate(dateStr: string): string {
 
 export default function DevisPage() {
   const { user, loading: userLoading } = useUser();
-  const [quotes, setQuotes] = useState<Quote[]>([]);
+  const [quotes, setQuotes] = useState<ClientQuote[]>([]);
   const [loading, setLoading] = useState(true);
-  const [updating, setUpdating] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchQuotes() {
       if (!user) return;
       const supabase = createClient();
-      const { data } = (await supabase
+      const { data } = await supabase
         .from("quotes")
-        .select("*")
+        .select("id, status, total, payment_url, valid_until, created_at, notes")
         .eq("user_id", user.id)
-        .order("created_at", { ascending: false })) as { data: Quote[] | null };
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .order("created_at", { ascending: false }) as any as { data: ClientQuote[] | null };
 
       if (data) {
         setQuotes(data);
@@ -56,28 +63,6 @@ export default function DevisPage() {
       setLoading(false);
     }
   }, [user, userLoading]);
-
-  const handleUpdateStatus = async (
-    quoteId: string,
-    newStatus: "accepted" | "rejected"
-  ) => {
-    setUpdating(quoteId);
-    setError(null);
-    const supabase = createClient();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase.from("quotes") as any)
-      .update({ status: newStatus })
-      .eq("id", quoteId);
-
-    if (!error) {
-      setQuotes((prev) =>
-        prev.map((q) => (q.id === quoteId ? { ...q, status: newStatus } : q))
-      );
-    } else {
-      setError("Erreur lors de la mise a jour du devis.");
-    }
-    setUpdating(null);
-  };
 
   if (userLoading || loading) {
     return (
@@ -96,15 +81,9 @@ export default function DevisPage() {
       >
         <h1 className="text-2xl font-bold text-blanc-casse">Mes devis</h1>
         <p className="mt-1 text-blanc-casse/60">
-          Consultez et gerez vos devis.
+          Consultez vos devis et payez en ligne.
         </p>
       </motion.div>
-
-      {error && (
-        <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
-          {error}
-        </div>
-      )}
 
       {quotes.length === 0 ? (
         <motion.div
@@ -129,19 +108,25 @@ export default function DevisPage() {
               >
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div className="flex items-center gap-4">
-                    <div className="p-3 rounded-xl bg-purple-500/10">
-                      <FileText className="h-5 w-5 text-purple-400" />
+                    <div className={`p-3 rounded-xl ${quote.status === "accepted" ? "bg-vert-neon/10" : "bg-purple-500/10"}`}>
+                      {quote.status === "accepted" ? (
+                        <CheckCircle2 className="h-5 w-5 text-vert-neon" />
+                      ) : (
+                        <FileText className="h-5 w-5 text-purple-400" />
+                      )}
                     </div>
                     <div>
                       <div className="flex items-center gap-3">
                         <p className="text-sm font-medium text-blanc-casse">
-                          {quote.id.slice(0, 8).toUpperCase()}
+                          Devis #{quote.id.slice(0, 8).toUpperCase()}
                         </p>
                         <Badge variant={status.variant}>{status.label}</Badge>
                       </div>
-                      <p className="text-sm text-blanc-casse/70 mt-1">
-                        {quote.notes || "Devis"}
-                      </p>
+                      {quote.notes && (
+                        <p className="text-sm text-blanc-casse/70 mt-1">
+                          {quote.notes.substring(0, 80)}
+                        </p>
+                      )}
                       <p className="text-xs text-blanc-casse/50 mt-0.5">
                         Valide jusqu&apos;au {formatDate(quote.valid_until)}
                       </p>
@@ -151,31 +136,16 @@ export default function DevisPage() {
                     <p className="text-lg font-bold text-blanc-casse">
                       {quote.total.toFixed(2)} EUR
                     </p>
-                    {quote.status === "sent" && (
-                      <div className="flex items-center gap-2">
-                        <Button
-                          size="sm"
-                          variant="primary"
-                          onClick={() =>
-                            handleUpdateStatus(quote.id, "accepted")
-                          }
-                          disabled={updating === quote.id}
-                        >
-                          <Check className="h-3.5 w-3.5 mr-1" />
-                          Accepter
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() =>
-                            handleUpdateStatus(quote.id, "rejected")
-                          }
-                          disabled={updating === quote.id}
-                        >
-                          <X className="h-3.5 w-3.5 mr-1" />
-                          Refuser
-                        </Button>
-                      </div>
+                    {quote.status === "sent" && quote.payment_url && (
+                      <a
+                        href={quote.payment_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 rounded-xl bg-vert-neon px-4 py-2.5 text-sm font-semibold text-noir-mat hover:opacity-90 transition-opacity"
+                      >
+                        <CreditCard className="h-4 w-4" />
+                        Payer
+                      </a>
                     )}
                   </div>
                 </div>
