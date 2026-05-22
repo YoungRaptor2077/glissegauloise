@@ -39,16 +39,35 @@ export default function NouveauProduitPage() {
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    if (!allowedTypes.includes(file.type)) {
+      setError("Format non supporte. Utilisez JPG, PNG, WebP ou GIF.");
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setError("Fichier trop volumineux (max 5 Mo).");
+      return;
+    }
+
     setUploading(true);
+    setError(null);
     try {
       const supabase = createClient();
-      const fileName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
-      const { error } = await supabase.storage.from('products').upload(fileName, file);
-      if (error) throw error;
+      const ext = file.name.split('.').pop() || 'jpg';
+      const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+      const { error: uploadError } = await supabase.storage.from('products').upload(fileName, file, {
+        contentType: file.type,
+      });
+      if (uploadError) throw uploadError;
       const { data: urlData } = supabase.storage.from('products').getPublicUrl(fileName);
       setFormData(prev => ({ ...prev, images: [...prev.images, urlData.publicUrl] }));
     } catch (err) {
       console.error('Upload error:', err);
+      setError(`Erreur upload: ${err instanceof Error ? err.message : "Verifiez que le bucket 'products' existe dans Supabase Storage"}`);
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -236,7 +255,7 @@ export default function NouveauProduitPage() {
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="image/jpeg,image/png,image/webp"
+                accept="image/jpeg,image/png,image/webp,image/gif"
                 onChange={handleImageUpload}
                 className="hidden"
               />
