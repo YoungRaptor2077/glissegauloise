@@ -1,176 +1,229 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { User, Lock } from "lucide-react";
-import { Input } from "@/components/ui/Input";
-import { Button } from "@/components/ui/Button";
+import { User, Save, LogOut } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 import { useUser } from "@/lib/hooks/useUser";
 
 export default function ProfilPage() {
-  const { profile } = useUser();
-  const [formData, setFormData] = useState({
-    fullName: profile?.full_name || "",
-    email: profile?.email || "",
-    phone: profile?.phone || "",
-    address: "",
-  });
-  const [passwordData, setPasswordData] = useState({
-    currentPassword: "",
-    newPassword: "",
-    confirmPassword: "",
-  });
+  const { user, loading: userLoading } = useUser();
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [success, setSuccess] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
+  const [formData, setFormData] = useState({
+    full_name: "",
+    phone: "",
+    address: "",
+    city: "",
+    postal_code: "",
+  });
 
-  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
-    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
-  }
+  useEffect(() => {
+    async function fetchProfile() {
+      if (!user) return;
+      const supabase = createClient();
+      const { data } = await supabase
+        .from("profiles")
+        .select("full_name, phone, address, city, postal_code")
+        .eq("id", user.id)
+        .single() as { data: { full_name: string | null; phone: string | null; address: string | null; city: string | null; postal_code: string | null } | null };
 
-  function handlePasswordChange(e: React.ChangeEvent<HTMLInputElement>) {
-    setPasswordData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
-  }
+      if (data) {
+        setFormData({
+          full_name: data.full_name || "",
+          phone: data.phone || "",
+          address: data.address || "",
+          city: data.city || "",
+          postal_code: data.postal_code || "",
+        });
+      }
+      setLoading(false);
+    }
 
-  async function handleSaveProfile(e: React.FormEvent<HTMLFormElement>) {
+    if (!userLoading && user) {
+      fetchProfile();
+    } else if (!userLoading) {
+      setLoading(false);
+    }
+  }, [user, userLoading]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user) return;
     setSaving(true);
-    setSuccess(null);
-    // Simulate save
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setSuccess("Profil mis a jour avec succes");
-    setSaving(false);
-  }
+    setFeedback(null);
 
-  async function handleChangePassword(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    // Password change logic would go here
+    const supabase = createClient();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase.from("profiles") as any)
+      .update({
+        full_name: formData.full_name,
+        phone: formData.phone,
+        address: formData.address,
+        city: formData.city,
+        postal_code: formData.postal_code,
+      })
+      .eq("id", user.id);
+
+    if (error) {
+      setFeedback({ type: "error", message: "Erreur lors de la sauvegarde" });
+    } else {
+      setFeedback({ type: "success", message: "Profil mis a jour avec succes" });
+    }
+    setSaving(false);
+  };
+
+  const handleLogout = async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    window.location.href = "/";
+  };
+
+  if (userLoading || loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="h-8 w-8 border-2 border-vert-neon border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
   }
 
   return (
-    <div className="space-y-8 max-w-2xl">
+    <div className="space-y-6">
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
       >
         <h1 className="text-2xl font-bold text-blanc-casse">Mon profil</h1>
-        <p className="mt-1 text-blanc-casse/60">
-          Gerez vos informations personnelles.
-        </p>
+        <p className="mt-1 text-blanc-casse/60">Gerez vos informations personnelles</p>
       </motion.div>
 
-      {/* Personal Info */}
-      <motion.div
+      <motion.form
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, delay: 0.1 }}
-        className="p-6 bg-gris-anthracite border border-white/5 rounded-2xl"
+        transition={{ delay: 0.1 }}
+        onSubmit={handleSave}
+        className="rounded-2xl border border-white/5 bg-gris-anthracite p-6 space-y-5"
       >
-        <div className="flex items-center gap-3 mb-6">
-          <div className="p-2.5 rounded-xl bg-vert-neon/10">
-            <User className="h-5 w-5 text-vert-neon" />
+        <div className="flex items-center gap-3 mb-4">
+          <div className="p-2 rounded-lg bg-vert-neon/10">
+            <User size={18} className="text-vert-neon" />
           </div>
-          <h2 className="text-lg font-semibold text-blanc-casse">
-            Informations personnelles
-          </h2>
+          <h2 className="text-lg font-semibold text-blanc-casse">Informations</h2>
         </div>
 
-        {success && (
-          <div className="mb-4 rounded-xl bg-green-500/10 border border-green-500/20 px-4 py-3 text-sm text-green-400">
-            {success}
+        <div>
+          <p className="text-xs text-blanc-casse/40 mb-4">Email : {user?.email}</p>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-blanc-casse/70 mb-1.5">
+            Nom d&apos;affichage (pseudo ou prenom)
+          </label>
+          <input
+            type="text"
+            name="full_name"
+            value={formData.full_name}
+            onChange={handleChange}
+            placeholder="Ex: Mathis, MathGDR, etc."
+            className="w-full rounded-xl border border-white/10 bg-noir-mat px-4 py-3 text-sm text-blanc-casse placeholder:text-blanc-casse/40 focus:border-vert-neon/50 focus:outline-none"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-blanc-casse/70 mb-1.5">
+            Telephone
+          </label>
+          <input
+            type="tel"
+            name="phone"
+            value={formData.phone}
+            onChange={handleChange}
+            placeholder="06 12 34 56 78"
+            className="w-full rounded-xl border border-white/10 bg-noir-mat px-4 py-3 text-sm text-blanc-casse placeholder:text-blanc-casse/40 focus:border-vert-neon/50 focus:outline-none"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-blanc-casse/70 mb-1.5">
+            Adresse
+          </label>
+          <input
+            type="text"
+            name="address"
+            value={formData.address}
+            onChange={handleChange}
+            placeholder="12 Rue de la Paix"
+            className="w-full rounded-xl border border-white/10 bg-noir-mat px-4 py-3 text-sm text-blanc-casse placeholder:text-blanc-casse/40 focus:border-vert-neon/50 focus:outline-none"
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-sm font-medium text-blanc-casse/70 mb-1.5">
+              Ville
+            </label>
+            <input
+              type="text"
+              name="city"
+              value={formData.city}
+              onChange={handleChange}
+              placeholder="Eaubonne"
+              className="w-full rounded-xl border border-white/10 bg-noir-mat px-4 py-3 text-sm text-blanc-casse placeholder:text-blanc-casse/40 focus:border-vert-neon/50 focus:outline-none"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-blanc-casse/70 mb-1.5">
+              Code postal
+            </label>
+            <input
+              type="text"
+              name="postal_code"
+              value={formData.postal_code}
+              onChange={handleChange}
+              placeholder="95600"
+              className="w-full rounded-xl border border-white/10 bg-noir-mat px-4 py-3 text-sm text-blanc-casse placeholder:text-blanc-casse/40 focus:border-vert-neon/50 focus:outline-none"
+            />
+          </div>
+        </div>
+
+        {feedback && (
+          <div className={`rounded-xl border px-4 py-3 text-sm ${
+            feedback.type === "success"
+              ? "border-vert-neon/20 bg-vert-neon/10 text-vert-neon"
+              : "border-red-500/20 bg-red-500/10 text-red-400"
+          }`}>
+            {feedback.message}
           </div>
         )}
 
-        <form onSubmit={handleSaveProfile} className="space-y-4">
-          <Input
-            id="fullName"
-            name="fullName"
-            label="Nom complet"
-            placeholder="Jean Dupont"
-            value={formData.fullName}
-            onChange={handleChange}
-          />
-          <Input
-            id="email"
-            name="email"
-            label="Email"
-            type="email"
-            placeholder="votre@email.com"
-            value={formData.email}
-            onChange={handleChange}
-            disabled
-          />
-          <Input
-            id="phone"
-            name="phone"
-            label="Telephone"
-            type="tel"
-            placeholder="06 12 34 56 78"
-            value={formData.phone}
-            onChange={handleChange}
-          />
-          <Input
-            id="address"
-            name="address"
-            label="Adresse"
-            placeholder="12 Rue de la Glisse, 75001 Paris"
-            value={formData.address}
-            onChange={handleChange}
-          />
-          <Button type="submit" isLoading={saving}>
-            Enregistrer
-          </Button>
-        </form>
-      </motion.div>
+        <button
+          type="submit"
+          disabled={saving}
+          className="flex items-center gap-2 rounded-xl bg-vert-neon px-6 py-3 text-sm font-semibold text-noir-mat hover:opacity-90 transition-opacity disabled:opacity-50"
+        >
+          <Save size={16} />
+          {saving ? "Sauvegarde..." : "Sauvegarder"}
+        </button>
+      </motion.form>
 
-      {/* Password Change */}
+      {/* Logout */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, delay: 0.2 }}
-        className="p-6 bg-gris-anthracite border border-white/5 rounded-2xl"
+        transition={{ delay: 0.2 }}
       >
-        <div className="flex items-center gap-3 mb-6">
-          <div className="p-2.5 rounded-xl bg-yellow-500/10">
-            <Lock className="h-5 w-5 text-yellow-400" />
-          </div>
-          <h2 className="text-lg font-semibold text-blanc-casse">
-            Changer le mot de passe
-          </h2>
-        </div>
-
-        <form onSubmit={handleChangePassword} className="space-y-4">
-          <Input
-            id="currentPassword"
-            name="currentPassword"
-            label="Mot de passe actuel"
-            type="password"
-            placeholder="Votre mot de passe actuel"
-            value={passwordData.currentPassword}
-            onChange={handlePasswordChange}
-          />
-          <Input
-            id="newPassword"
-            name="newPassword"
-            label="Nouveau mot de passe"
-            type="password"
-            placeholder="Nouveau mot de passe"
-            value={passwordData.newPassword}
-            onChange={handlePasswordChange}
-          />
-          <Input
-            id="confirmPassword"
-            name="confirmPassword"
-            label="Confirmer le nouveau mot de passe"
-            type="password"
-            placeholder="Confirmez le mot de passe"
-            value={passwordData.confirmPassword}
-            onChange={handlePasswordChange}
-          />
-          <Button type="submit" variant="secondary">
-            Changer le mot de passe
-          </Button>
-        </form>
+        <button
+          onClick={handleLogout}
+          className="flex items-center gap-2 rounded-xl border border-red-500/30 px-6 py-3 text-sm font-medium text-red-400 hover:bg-red-500/10 transition-colors"
+        >
+          <LogOut size={16} />
+          Se deconnecter
+        </button>
       </motion.div>
     </div>
   );

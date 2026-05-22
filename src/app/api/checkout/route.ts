@@ -102,6 +102,17 @@ export async function POST(request: NextRequest) {
         {
           shipping_rate_data: {
             type: "fixed_amount",
+            fixed_amount: { amount: 0, currency: "eur" },
+            display_name: "Retrait en boutique (gratuit)",
+            delivery_estimate: {
+              minimum: { unit: "business_day", value: 1 },
+              maximum: { unit: "business_day", value: 2 },
+            },
+          },
+        },
+        {
+          shipping_rate_data: {
+            type: "fixed_amount",
             fixed_amount: { amount: 590, currency: "eur" },
             display_name: "Livraison standard",
             delivery_estimate: {
