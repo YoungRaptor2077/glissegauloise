@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
+import { verifyCsrf } from "@/lib/csrf";
 
 const ADMIN_PASSWORD = "12512595";
 
@@ -16,6 +18,15 @@ function setAdminCookie(response: NextResponse) {
 
 export async function POST(request: NextRequest) {
   try {
+    const rateLimitKey = getRateLimitKey(request, "admin-login");
+    if (!rateLimit(rateLimitKey, 5, 300000)) {
+      return NextResponse.json({ error: "Trop de tentatives. Reessayez dans 5 minutes." }, { status: 429 });
+    }
+
+    if (!verifyCsrf(request)) {
+      return NextResponse.json({ error: "Requete non autorisee" }, { status: 403 });
+    }
+
     const body = await request.json();
 
     // Method 1: Direct password

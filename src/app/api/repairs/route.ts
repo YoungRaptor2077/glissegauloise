@@ -2,12 +2,18 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { createServerClient } from "@supabase/ssr";
 import { sendRepairReceivedEmail } from "@/lib/email";
+import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
 import type { Database } from "@/types/database";
 
 type RepairInsert = Database["public"]["Tables"]["repairs"]["Insert"];
 
 export async function POST(request: NextRequest) {
   try {
+    const rateLimitKey = getRateLimitKey(request, "repair-submit");
+    if (!rateLimit(rateLimitKey, 3, 60000)) {
+      return NextResponse.json({ error: "Trop de demandes. Reessayez dans 1 minute." }, { status: 429 });
+    }
+
     const body = await request.json();
 
     if (!body.marque || !body.description || !body.email) {
@@ -15,6 +21,20 @@ export async function POST(request: NextRequest) {
         { error: "Les champs marque, description et email sont obligatoires" },
         { status: 400 }
       );
+    }
+
+    // Validate email format if provided
+    if (body.email) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(body.email)) {
+        return NextResponse.json({ error: "Email invalide" }, { status: 400 });
+      }
+    }
+
+    // Basic spam detection
+    const spamPatterns = /\b(viagra|casino|lottery|crypto.?earn|click here|free money)\b/i;
+    if (body.description && spamPatterns.test(body.description)) {
+      return NextResponse.json({ error: "Message invalide" }, { status: 400 });
     }
 
     // Try to get authenticated user from cookies

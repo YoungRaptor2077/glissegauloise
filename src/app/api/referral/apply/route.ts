@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { createServerClient } from "@supabase/ssr";
+import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
 
 export async function POST(request: NextRequest) {
   try {
+    const rateLimitKey = getRateLimitKey(request, "referral-apply");
+    if (!rateLimit(rateLimitKey, 5, 60000)) {
+      return NextResponse.json({ error: "Trop de tentatives. Reessayez dans 1 minute." }, { status: 429 });
+    }
+
     const body = await request.json();
     const { referralCode } = body;
 

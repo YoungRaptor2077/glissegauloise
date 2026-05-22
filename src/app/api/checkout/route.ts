@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe";
 import { createServiceClient } from "@/lib/supabase/service";
+import { verifyCsrf } from "@/lib/csrf";
 
 interface CartItemPayload {
   id: string;
@@ -12,6 +13,10 @@ interface CartItemPayload {
 
 export async function POST(request: NextRequest) {
   try {
+    if (!verifyCsrf(request)) {
+      return NextResponse.json({ error: "Requete non autorisee" }, { status: 403 });
+    }
+
     const stripe = getStripe();
     const body = await request.json();
     const { items, customerEmail, shippingAddress } = body as {
