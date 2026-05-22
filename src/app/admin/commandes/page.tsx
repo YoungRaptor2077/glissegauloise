@@ -85,7 +85,7 @@ export default function CommandesPage() {
             const profile = o.user_id ? profileMap[o.user_id] : null;
             const itemsArray = Array.isArray(o.items) ? o.items : [];
             return {
-              id: o.id.substring(0, 8).toUpperCase(),
+              id: `GG-${o.id.substring(0, 4).toUpperCase()}`,
               rawId: o.id,
               client: profile?.full_name || "Client",
               email: profile?.email || "",
@@ -190,12 +190,19 @@ export default function CommandesPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-blanc-casse">Commandes</h1>
-        <p className="text-sm text-blanc-casse/60">Gerez les commandes de vos clients</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-blanc-casse">Commandes</h1>
+          <p className="text-sm text-blanc-casse/60">Gerez les commandes de vos clients</p>
+        </div>
+        <a
+          href="/api/admin/export?type=orders"
+          download
+          className="px-4 py-2 rounded-lg bg-vert-neon/10 border border-vert-neon/20 text-sm font-medium text-vert-neon hover:bg-vert-neon/20 transition-colors"
+        >
+          Exporter CSV
+        </a>
       </div>
-
-      {/* Status Tabs */}
       <div className="flex flex-wrap gap-2 rounded-xl border border-white/5 bg-noir-mat/50 p-2">
         {tabs.map((tab) => (
           <button

@@ -88,6 +88,35 @@ export async function sendNewMessageEmail(to: string, clientName: string) {
   }
 }
 
+export async function sendWelcomeEmail(to: string, name: string) {
+  if (!resend) return;
+  try {
+    await resend.emails.send({
+      from: FROM_EMAIL,
+      to,
+      subject: "Bienvenue chez GlisseGauloisse !",
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #0a0a0a; color: #f5f5f0; padding: 40px; border-radius: 16px;">
+          <h1 style="color: #00ff88; font-size: 24px; margin-bottom: 20px;">Bienvenue ${name || ""} !</h1>
+          <p>Votre compte GlisseGauloisse a ete cree avec succes.</p>
+          <p>Vous pouvez desormais :</p>
+          <ul style="padding-left: 20px; color: #ccc;">
+            <li>Commander des pieces et accessoires</li>
+            <li>Demander des reparations en ligne</li>
+            <li>Suivre vos commandes et reparations</li>
+            <li>Cumuler des points de fidelite</li>
+          </ul>
+          <p style="margin-top: 20px;"><a href="https://glissegauloisse.com/boutique" style="display: inline-block; background: #00ff88; color: #0a0a0a; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold;">Decouvrir la boutique</a></p>
+          <hr style="border: none; border-top: 1px solid #2a2a2a; margin: 30px 0;" />
+          <p style="color: #888; font-size: 12px;">GlisseGauloisse - 49 Route de Margency, 95600 Eaubonne<br/>07 86 75 79 63</p>
+        </div>
+      `,
+    });
+  } catch (error) {
+    console.error("Email send error (welcome):", error);
+  }
+}
+
 export async function sendOrderConfirmationEmail(to: string, clientName: string, orderId: string, total: number) {
   if (!resend) return;
   try {

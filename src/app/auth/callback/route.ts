@@ -2,6 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { sendWelcomeEmail } from "@/lib/email";
 
 const ADMIN_EMAILS = ["gdrmathis15@gmail.com", "vanderieviere76@gmail.com"];
 
@@ -35,7 +36,18 @@ export async function GET(request: NextRequest) {
 
     const { data } = await supabase.auth.exchangeCodeForSession(code);
 
-    const userEmail = data?.session?.user?.email;
+    const user = data?.session?.user;
+    const userEmail = user?.email;
+
+    // Send welcome email for new users (created within last 60 seconds)
+    if (user) {
+      const createdAt = new Date(user.created_at);
+      const now = new Date();
+      if (now.getTime() - createdAt.getTime() < 60000) {
+        sendWelcomeEmail(user.email || "", user.user_metadata?.full_name || "");
+      }
+    }
+
     if (userEmail && ADMIN_EMAILS.includes(userEmail)) {
       const response = NextResponse.redirect(new URL("/admin", requestUrl.origin));
       response.cookies.set("admin_session", "authenticated", {

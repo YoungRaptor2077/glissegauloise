@@ -158,7 +158,7 @@ export default function CommandesPage() {
                   </div>
                   <div>
                     <p className="text-sm font-medium text-blanc-casse">
-                      {order.id.slice(0, 8).toUpperCase()}
+                      GG-{order.id.slice(0, 4).toUpperCase()}
                     </p>
                     <p className="text-xs text-blanc-casse/50 mt-0.5">
                       {formatDate(order.created_at)} - {itemCount} article
@@ -211,7 +211,7 @@ export default function CommandesPage() {
             >
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-lg font-bold text-blanc-casse">
-                  Commande {selectedOrder.id.slice(0, 8).toUpperCase()}
+                  Commande GG-{selectedOrder.id.slice(0, 4).toUpperCase()}
                 </h2>
                 <button
                   onClick={() => setSelectedOrder(null)}

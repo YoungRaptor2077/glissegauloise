@@ -79,9 +79,18 @@ export default function ClientsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-blanc-casse">Clients</h1>
-        <p className="text-sm text-blanc-casse/60">Gerez vos clients et consultez leur historique</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-blanc-casse">Clients</h1>
+          <p className="text-sm text-blanc-casse/60">Gerez vos clients et consultez leur historique</p>
+        </div>
+        <a
+          href="/api/admin/export?type=clients"
+          download
+          className="px-4 py-2 rounded-lg bg-vert-neon/10 border border-vert-neon/20 text-sm font-medium text-vert-neon hover:bg-vert-neon/20 transition-colors"
+        >
+          Exporter CSV
+        </a>
       </div>
 
       {clients.length === 0 ? (
