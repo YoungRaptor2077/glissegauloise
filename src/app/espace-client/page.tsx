@@ -6,6 +6,7 @@ import { ShoppingBag, Wrench, MessageSquare, FileText } from "lucide-react";
 import { useUser } from "@/lib/hooks/useUser";
 import { createClient } from "@/lib/supabase/client";
 import { LoyaltyCard } from "@/components/client/LoyaltyCard";
+import { ReferralCard } from "@/components/client/ReferralCard";
 
 interface SummaryCard {
   label: string;
@@ -59,6 +60,23 @@ export default function EspaceClientPage() {
     },
   ]);
   const [recentActivity, setRecentActivity] = useState<Activity[]>([]);
+
+  useEffect(() => {
+    async function applyPendingReferral() {
+      const ref = localStorage.getItem("pending_referral");
+      if (ref) {
+        localStorage.removeItem("pending_referral");
+        try {
+          await fetch("/api/referral/apply", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ referralCode: ref }),
+          });
+        } catch {}
+      }
+    }
+    applyPendingReferral();
+  }, []);
 
   useEffect(() => {
     if (!user) return;
@@ -217,6 +235,9 @@ export default function EspaceClientPage() {
 
       {/* Loyalty Card */}
       <LoyaltyCard />
+
+      {/* Referral Card */}
+      <ReferralCard />
 
       {/* Recent Activity */}
       <motion.div

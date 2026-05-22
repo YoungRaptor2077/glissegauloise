@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Package, Eye, X, Truck, MapPin, Star, CheckCircle2 } from "lucide-react";
+import { Package, Eye, X, Truck, MapPin, Star } from "lucide-react";
+import { generateInvoicePDF } from "@/lib/invoice";
 import Link from "next/link";
 import { Badge } from "@/components/ui/Badge";
 import type { BadgeVariant } from "@/components/ui/Badge";
@@ -333,6 +334,31 @@ export default function CommandesPage() {
                   </p>
                 </div>
               )}
+
+              <button
+                onClick={() => {
+                  const items = Array.isArray(selectedOrder.items) ? selectedOrder.items : [];
+                  generateInvoicePDF({
+                    orderNumber: `GG-${selectedOrder.id.slice(0, 4).toUpperCase()}`,
+                    date: formatDate(selectedOrder.created_at),
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    customerName: (selectedOrder as any).customer_name || "",
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    customerEmail: (selectedOrder as any).customer_email || "",
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    items: items.map((item: any) => ({
+                      name: item.name || "Article",
+                      quantity: item.qty || item.quantity || 1,
+                      price: item.price || 0,
+                    })),
+                    total: selectedOrder.total,
+                  });
+                }}
+                className="mt-4 w-full flex items-center justify-center gap-2 rounded-xl bg-vert-neon/10 border border-vert-neon/20 px-4 py-3 text-sm font-medium text-vert-neon hover:bg-vert-neon/20 transition-colors"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Telecharger la facture (PDF)
+              </button>
             </motion.div>
           </motion.div>
         )}
