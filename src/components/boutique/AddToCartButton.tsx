@@ -29,6 +29,7 @@ export function AddToCartButton({ product, className }: AddToCartButtonProps) {
         price: product.price,
         image: product.images[0] || "",
         brand: product.brand,
+        stock: product.stockQuantity,
       },
       quantity
     );

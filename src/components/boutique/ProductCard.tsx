@@ -29,6 +29,7 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
       price: product.price,
       image: product.images[0] || "",
       brand: product.brand,
+      stock: product.stockQuantity,
     });
   };
 

@@ -10,6 +10,7 @@ export interface CartItem {
   quantity: number;
   image: string;
   brand: string;
+  stock: number;
 }
 
 interface CartContextType {
@@ -68,9 +69,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
       setItems((prev) => {
         const existing = prev.find((item) => item.id === newItem.id);
         if (existing) {
+          const maxQty = existing.stock || 999;
+          const newQty = Math.min(existing.quantity + quantity, maxQty);
           return prev.map((item) =>
             item.id === newItem.id
-              ? { ...item, quantity: item.quantity + quantity }
+              ? { ...item, quantity: newQty }
               : item
           );
         }
@@ -91,7 +94,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
       return;
     }
     setItems((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, quantity } : item))
+      prev.map((item) => {
+        if (item.id === id) {
+          const maxQty = item.stock || 999;
+          return { ...item, quantity: Math.min(quantity, maxQty) };
+        }
+        return item;
+      })
     );
   }, []);
 

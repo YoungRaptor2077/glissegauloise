@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { stripe } from "@/lib/stripe";
+import { getStripe } from "@/lib/stripe";
 import { createServiceClient } from "@/lib/supabase/service";
 
 interface CartItemPayload {
@@ -12,6 +12,7 @@ interface CartItemPayload {
 
 export async function POST(request: NextRequest) {
   try {
+    const stripe = getStripe();
     const body = await request.json();
     const { items, customerEmail, shippingAddress } = body as {
       items: CartItemPayload[];

@@ -148,7 +148,7 @@ export default function ProductDetailPage() {
                       key={i}
                       className={cn(
                         "h-4 w-4",
-                        i < 4 ? "text-yellow-400 fill-yellow-400" : "text-blanc-casse/20"
+                        "text-blanc-casse/20"
                       )}
                     />
                   ))}
