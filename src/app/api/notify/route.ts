@@ -2,7 +2,16 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { sendRepairStatusEmail } from "@/lib/email";
 
+function isAdminAuthenticated(request: NextRequest): boolean {
+  const cookie = request.cookies.get("admin_session");
+  return cookie?.value === "authenticated";
+}
+
 export async function POST(request: NextRequest) {
+  if (!isAdminAuthenticated(request)) {
+    return NextResponse.json({ error: "Non autorise" }, { status: 401 });
+  }
+
   try {
     const body = await request.json();
     const { user_id, title, message, type, link } = body;

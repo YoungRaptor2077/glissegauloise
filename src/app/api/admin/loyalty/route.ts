@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 
+function isAdminAuthenticated(request: NextRequest): boolean {
+  const cookie = request.cookies.get("admin_session");
+  return cookie?.value === "authenticated";
+}
+
 const DEFAULT_SETTINGS = {
   points_per_euro: 1,
   reward_threshold: 250,
@@ -31,6 +36,10 @@ export async function GET() {
 }
 
 export async function PUT(request: NextRequest) {
+  if (!isAdminAuthenticated(request)) {
+    return NextResponse.json({ error: "Non autorise" }, { status: 401 });
+  }
+
   try {
     const body = await request.json();
     const points_per_euro = Math.round(Number(body.points_per_euro));

@@ -1,7 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 
+function isAdminAuthenticated(request: NextRequest): boolean {
+  const cookie = request.cookies.get("admin_session");
+  return cookie?.value === "authenticated";
+}
+
 export async function GET(request: NextRequest) {
+  if (!isAdminAuthenticated(request)) {
+    return NextResponse.json({ error: "Non autorise" }, { status: 401 });
+  }
+
   const { searchParams } = new URL(request.url);
   const type = searchParams.get("type"); // "clients" or "orders"
 

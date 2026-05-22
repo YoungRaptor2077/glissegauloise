@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 
+function isAdminAuthenticated(request: NextRequest): boolean {
+  const cookie = request.cookies.get("admin_session");
+  return cookie?.value === "authenticated";
+}
+
 export async function GET() {
   try {
     const supabase = createServiceClient();
@@ -20,6 +25,10 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  if (!isAdminAuthenticated(request)) {
+    return NextResponse.json({ error: "Non autorise" }, { status: 401 });
+  }
+
   try {
     const body = await request.json();
     const { image_url, title, description } = body;
@@ -50,6 +59,10 @@ export async function POST(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
+  if (!isAdminAuthenticated(request)) {
+    return NextResponse.json({ error: "Non autorise" }, { status: 401 });
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");

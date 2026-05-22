@@ -1,7 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe";
 
+function isAdminAuthenticated(request: NextRequest): boolean {
+  const cookie = request.cookies.get("admin_session");
+  return cookie?.value === "authenticated";
+}
+
 export async function POST(request: NextRequest) {
+  if (!isAdminAuthenticated(request)) {
+    return NextResponse.json({ error: "Non autorise" }, { status: 401 });
+  }
+
   try {
     const body = await request.json();
     const { amount, repairId, clientEmail, clientName, description } = body;
