@@ -7,6 +7,7 @@ import { useUser } from "@/lib/hooks/useUser";
 import { createClient } from "@/lib/supabase/client";
 import { LoyaltyCard } from "@/components/client/LoyaltyCard";
 import { ReferralCard } from "@/components/client/ReferralCard";
+import { QuotesCard } from "@/components/client/QuotesCard";
 
 interface SummaryCard {
   label: string;
@@ -238,6 +239,9 @@ export default function EspaceClientPage() {
 
       {/* Referral Card */}
       <ReferralCard />
+
+      {/* Quotes Card */}
+      <QuotesCard />
 
       {/* Recent Activity */}
       <motion.div

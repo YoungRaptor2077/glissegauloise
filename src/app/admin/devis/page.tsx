@@ -224,41 +224,20 @@ export default function DevisPage() {
               </button>
             )}
             {row.status === "sent" && (
-              <>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    const quote = quotes.find(q => q.rawId === row.rawId);
-                    if (quote?.paymentUrl) {
-                      navigator.clipboard.writeText(quote.paymentUrl);
-                      alert("Lien de paiement copie !");
-                    } else {
-                      alert("Pas de lien de paiement pour ce devis");
-                    }
-                  }}
-                  className="rounded-lg bg-blue-500/10 px-2 py-1 text-xs font-medium text-blue-400 hover:bg-blue-500/20"
-                >
-                  Copier lien
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleStatusUpdate(row.rawId, "accepted");
-                  }}
-                  className="rounded-lg bg-green-500/10 px-2 py-1 text-xs font-medium text-green-400 hover:bg-green-500/20"
-                >
-                  Accepter
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleStatusUpdate(row.rawId, "rejected");
-                  }}
-                  className="rounded-lg bg-red-500/10 px-2 py-1 text-xs font-medium text-red-400 hover:bg-red-500/20"
-                >
-                  Refuser
-                </button>
-              </>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (row.paymentUrl) {
+                    navigator.clipboard.writeText(row.paymentUrl);
+                    alert("Lien de paiement copie !");
+                  } else {
+                    alert("Pas de lien de paiement pour ce devis");
+                  }
+                }}
+                className="rounded-lg bg-blue-500/10 px-2 py-1 text-xs font-medium text-blue-400 hover:bg-blue-500/20"
+              >
+                Copier lien
+              </button>
             )}
           </div>
         )}
