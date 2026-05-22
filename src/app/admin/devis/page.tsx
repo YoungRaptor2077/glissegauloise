@@ -224,20 +224,40 @@ export default function DevisPage() {
               </button>
             )}
             {row.status === "sent" && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (row.paymentUrl) {
-                    navigator.clipboard.writeText(row.paymentUrl);
-                    alert("Lien de paiement copie !");
-                  } else {
-                    alert("Pas de lien de paiement pour ce devis");
-                  }
-                }}
-                className="rounded-lg bg-blue-500/10 px-2 py-1 text-xs font-medium text-blue-400 hover:bg-blue-500/20"
-              >
-                Copier lien
-              </button>
+              <>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (row.paymentUrl) {
+                      navigator.clipboard.writeText(row.paymentUrl);
+                      alert("Lien de paiement copie !");
+                    } else {
+                      alert("Pas de lien de paiement pour ce devis");
+                    }
+                  }}
+                  className="rounded-lg bg-blue-500/10 px-2 py-1 text-xs font-medium text-blue-400 hover:bg-blue-500/20"
+                >
+                  Copier lien
+                </button>
+                <button
+                  onClick={async (e) => {
+                    e.stopPropagation();
+                    const res = await fetch("/api/admin/quotes/resend", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ quoteId: row.rawId }),
+                    });
+                    if (res.ok) {
+                      alert("Relance envoyee au client !");
+                    } else {
+                      alert("Erreur lors de la relance");
+                    }
+                  }}
+                  className="rounded-lg bg-yellow-500/10 px-2 py-1 text-xs font-medium text-yellow-400 hover:bg-yellow-500/20"
+                >
+                  Relancer
+                </button>
+              </>
             )}
           </div>
         )}
