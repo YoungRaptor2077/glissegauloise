@@ -75,9 +75,14 @@ export default function CheckoutPage() {
 
       if (data.url) {
         window.location.href = data.url;
+      } else if (data.error) {
+        alert("Erreur: " + data.error);
+      } else {
+        alert("Erreur lors de la creation du paiement. Veuillez reessayer.");
       }
     } catch (error) {
       console.error("Checkout error:", error);
+      alert("Erreur de connexion. Veuillez reessayer.");
     } finally {
       setIsLoading(false);
     }
