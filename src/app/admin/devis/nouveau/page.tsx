@@ -220,12 +220,11 @@ export default function NouveauDevisPage() {
                         className="w-full rounded-xl border border-white/10 bg-gris-anthracite pl-9 pr-4 py-2.5 text-sm text-blanc-casse placeholder:text-blanc-casse/40 focus:border-vert-neon/50 focus:outline-none focus:ring-1 focus:ring-vert-neon/30"
                       />
                     </div>
-                    {clientSearch && (
-                      <div className="max-h-48 overflow-y-auto rounded-xl border border-white/10 bg-gris-anthracite">
-                        {filteredClients.length === 0 ? (
-                          <p className="px-4 py-3 text-sm text-blanc-casse/50">Aucun client trouve</p>
-                        ) : (
-                          filteredClients.slice(0, 10).map((client) => (
+                    <div className="max-h-48 overflow-y-auto rounded-xl border border-white/10 bg-gris-anthracite">
+                      {filteredClients.length === 0 ? (
+                        <p className="px-4 py-3 text-sm text-blanc-casse/50">Aucun client trouve</p>
+                      ) : (
+                        filteredClients.slice(0, 15).map((client) => (
                             <button
                               key={client.id}
                               type="button"
@@ -246,7 +245,6 @@ export default function NouveauDevisPage() {
                           ))
                         )}
                       </div>
-                    )}
                   </>
                 )}
               </div>
