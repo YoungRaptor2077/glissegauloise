@@ -34,6 +34,7 @@ export async function sendRepairStatusEmail(to: string, clientName: string, stat
   const statusMessages: Record<string, string> = {
     received: "Votre demande de reparation a ete prise en compte.",
     diagnostic: "Votre trottinette est en cours de diagnostic.",
+    awaiting_decision: "Le diagnostic est termine. Un devis vous a ete envoye. En attente de votre decision.",
     waiting_parts: "Nous attendons les pieces necessaires pour votre reparation.",
     in_progress: "La reparation de votre trottinette est en cours.",
     testing: "Votre trottinette est en phase de test.",

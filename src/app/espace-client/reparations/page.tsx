@@ -3,7 +3,7 @@
 import React from "react";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Wrench, MessageSquare, Inbox, Search, Package, FlaskConical, CheckCircle2, Hand } from "lucide-react";
+import { Wrench, MessageSquare, Inbox, Search, Package, FlaskConical, CheckCircle2, Hand, Clock } from "lucide-react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/Badge";
 import type { BadgeVariant } from "@/components/ui/Badge";
@@ -14,6 +14,7 @@ import type { Repair } from "@/types/database";
 const statusConfig: Record<string, { label: string; variant: BadgeVariant }> = {
   received: { label: "Recu", variant: "warning" },
   diagnostic: { label: "Diagnostic", variant: "neon" },
+  awaiting_decision: { label: "En attente de decision", variant: "warning" },
   waiting_parts: { label: "En attente pieces", variant: "warning" },
   in_progress: { label: "En cours", variant: "neon" },
   testing: { label: "En test", variant: "neon" },
@@ -22,11 +23,12 @@ const statusConfig: Record<string, { label: string; variant: BadgeVariant }> = {
   closed: { label: "Terminee", variant: "default" },
 };
 
-const timelineSteps = ["received", "diagnostic", "waiting_parts", "in_progress", "testing", "completed", "ready_pickup"];
+const timelineSteps = ["received", "diagnostic", "awaiting_decision", "waiting_parts", "in_progress", "testing", "completed", "ready_pickup"];
 
 const timelineIcons: Record<string, React.ReactNode> = {
   received: <Inbox size={10} />,
   diagnostic: <Search size={10} />,
+  awaiting_decision: <Clock size={10} />,
   waiting_parts: <Package size={10} />,
   in_progress: <Wrench size={10} />,
   testing: <FlaskConical size={10} />,

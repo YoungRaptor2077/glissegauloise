@@ -3,12 +3,12 @@
 import React from "react";
 import { useState, useEffect } from "react";
 import { DataTable, type Column } from "@/components/admin/DataTable";
-import { X, Trash2, Inbox, Search, Package, Wrench, FlaskConical, CheckCircle, Hand, Lock, MessageSquare } from "lucide-react";
+import { X, Trash2, Inbox, Search, Package, Wrench, FlaskConical, CheckCircle, Hand, Lock, MessageSquare, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import type { Repair, Profile } from "@/types/database";
 
-type RepairStatus = "all" | "received" | "diagnostic" | "waiting_parts" | "in_progress" | "testing" | "completed" | "ready_pickup" | "closed";
+type RepairStatus = "all" | "received" | "diagnostic" | "awaiting_decision" | "waiting_parts" | "in_progress" | "testing" | "completed" | "ready_pickup" | "closed";
 
 interface RepairRow {
   id: string;
@@ -33,6 +33,7 @@ interface RepairRow {
 const statusLabels: Record<string, string> = {
   received: "Recu",
   diagnostic: "Diagnostic",
+  awaiting_decision: "En attente de decision",
   waiting_parts: "En attente pieces",
   in_progress: "En cours",
   testing: "En test",
@@ -44,6 +45,7 @@ const statusLabels: Record<string, string> = {
 const statusStyles: Record<string, string> = {
   received: "bg-yellow-500/10 text-yellow-400",
   diagnostic: "bg-orange-500/10 text-orange-400",
+  awaiting_decision: "bg-amber-500/10 text-amber-400",
   waiting_parts: "bg-purple-500/10 text-purple-400",
   in_progress: "bg-blue-500/10 text-blue-400",
   testing: "bg-cyan-500/10 text-cyan-400",
@@ -55,6 +57,7 @@ const statusStyles: Record<string, string> = {
 const statusIcons: Record<string, React.ReactNode> = {
   received: <Inbox size={14} className="text-blue-400" />,
   diagnostic: <Search size={14} className="text-yellow-400" />,
+  awaiting_decision: <Clock size={14} className="text-amber-400" />,
   waiting_parts: <Package size={14} className="text-orange-400" />,
   in_progress: <Wrench size={14} className="text-vert-neon" />,
   testing: <FlaskConical size={14} className="text-purple-400" />,
@@ -63,12 +66,13 @@ const statusIcons: Record<string, React.ReactNode> = {
   closed: <Lock size={14} className="text-gray-400" />,
 };
 
-const statusOrder = ["received", "diagnostic", "waiting_parts", "in_progress", "testing", "completed", "ready_pickup", "closed"];
+const statusOrder = ["received", "diagnostic", "awaiting_decision", "waiting_parts", "in_progress", "testing", "completed", "ready_pickup", "closed"];
 
 const tabs: { key: RepairStatus; label: string }[] = [
   { key: "all", label: "Toutes" },
   { key: "received", label: "Recu" },
   { key: "diagnostic", label: "Diagnostic" },
+  { key: "awaiting_decision", label: "Attente decision" },
   { key: "waiting_parts", label: "Attente pieces" },
   { key: "in_progress", label: "En cours" },
   { key: "testing", label: "En test" },

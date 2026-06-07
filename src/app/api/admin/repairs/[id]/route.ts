@@ -85,6 +85,7 @@ export async function PATCH(
     const validStatuses = [
       "received",
       "diagnostic",
+      "awaiting_decision",
       "waiting_parts",
       "in_progress",
       "testing",
