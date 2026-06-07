@@ -3,7 +3,7 @@
 import React from "react";
 import { useState, useEffect } from "react";
 import { DataTable, type Column } from "@/components/admin/DataTable";
-import { X, Trash2, Inbox, Search, Package, Wrench, FlaskConical, CheckCircle, Hand, Lock } from "lucide-react";
+import { X, Trash2, Inbox, Search, Package, Wrench, FlaskConical, CheckCircle, Hand, Lock, MessageSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import type { Repair, Profile } from "@/types/database";
@@ -344,6 +344,36 @@ export default function ReparationsPage() {
                 </option>
               ))}
             </select>
+            {row.userId && (
+              <button
+                onClick={async (e) => {
+                  e.stopPropagation();
+                  try {
+                    const res = await fetch("/api/admin/conversations/new", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        userId: row.userId,
+                        subject: `Reparation - ${row.brand} ${row.equipment}`,
+                        content: `Bonjour, je vous contacte au sujet de votre reparation (${row.brand} ${row.equipment}).`,
+                      }),
+                    });
+                    const data = await res.json();
+                    if (res.ok && data.conversation?.id) {
+                      window.location.href = `/admin/conversations/${data.conversation.id}`;
+                    } else {
+                      alert(data.error || "Erreur lors de la creation de la conversation");
+                    }
+                  } catch {
+                    alert("Erreur de connexion");
+                  }
+                }}
+                className="rounded-lg p-1.5 text-blanc-casse/40 hover:bg-blue-500/10 hover:text-blue-400 transition-colors"
+                title="Contacter le client"
+              >
+                <MessageSquare size={15} />
+              </button>
+            )}
             <button
               onClick={(e) => {
                 e.stopPropagation();
