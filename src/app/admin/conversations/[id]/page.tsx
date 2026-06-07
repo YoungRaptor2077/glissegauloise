@@ -229,18 +229,20 @@ export default function AdminConversationDetailPage() {
           {messages.length === 0 ? (
             <p className="text-sm text-blanc-casse/40 text-center py-8">Aucun message</p>
           ) : (
-            messages.map((msg) => (
-              <ChatBubble
-                key={msg.id}
-                content={msg.content}
-                timestamp={formatTimestamp(msg.created_at)}
-                isSent={user ? msg.sender_id === user.id : false}
-                senderName={
-                  user && msg.sender_id !== user.id ? customer?.name : undefined
-                }
-                isRead={msg.is_read}
-              />
-            ))
+            messages.map((msg) => {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const isAdminMsg = (msg as any).is_admin === true;
+              return (
+                <ChatBubble
+                  key={msg.id}
+                  content={msg.content}
+                  timestamp={formatTimestamp(msg.created_at)}
+                  isSent={isAdminMsg}
+                  senderName={!isAdminMsg ? customer?.name : undefined}
+                  isRead={msg.is_read}
+                />
+              );
+            })
           )}
           <div ref={messagesEndRef} />
         </div>
