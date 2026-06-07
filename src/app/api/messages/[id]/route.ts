@@ -158,6 +158,44 @@ export async function POST(
       .update({ last_message_at: new Date().toISOString() })
       .eq("id", id);
 
+    // Send email notification to admin
+    try {
+      const { data: clientProfile } = await supabase
+        .from("profiles")
+        .select("full_name, email")
+        .eq("id", user.id)
+        .single();
+
+      const clientName = (clientProfile as { full_name?: string } | null)?.full_name || "Un client";
+
+      const { Resend } = await import("resend");
+      const resend = new Resend(process.env.RESEND_API_KEY);
+      if (resend) {
+        const adminEmails = ["gdrmathis15@gmail.com", "vanderieviere76@gmail.com"];
+        await resend.emails.send({
+          from: "GlisseGauloisse <noreply@glissegauloisse.com>",
+          to: adminEmails,
+          subject: `Nouveau message de ${clientName}`,
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #0a0a0a; color: #f5f5f0; padding: 40px; border-radius: 16px;">
+              <h1 style="color: #00ff88; font-size: 20px; margin-bottom: 16px;">Nouveau message client</h1>
+              <p><strong>${clientName}</strong> vous a envoye un message :</p>
+              <div style="background: #1a1a1a; padding: 16px; border-radius: 8px; margin: 16px 0; border-left: 4px solid #00ff88;">
+                <p style="margin: 0; white-space: pre-wrap;">${body.content.substring(0, 300)}</p>
+              </div>
+              <p style="margin-top: 20px;">
+                <a href="https://glissegauloisse.com/admin/conversations/${id}" style="display: inline-block; background: #00ff88; color: #0a0a0a; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold;">Repondre</a>
+              </p>
+              <hr style="border: none; border-top: 1px solid #2a2a2a; margin: 30px 0;" />
+              <p style="color: #888; font-size: 12px;">GlisseGauloisse - 49 Route de Margency, 95600 Eaubonne</p>
+            </div>
+          `,
+        });
+      }
+    } catch {
+      // Email notification to admin failed, non-blocking
+    }
+
     return NextResponse.json({ message });
   } catch (error) {
     console.error("Send message API error:", error);
