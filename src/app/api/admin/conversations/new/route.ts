@@ -39,24 +39,49 @@ export async function POST(request: NextRequest) {
 
     const supabase = createServiceClient();
 
-    // Create the conversation
-    const { data: conversation, error: convError } = await supabase
+    // Check if a conversation already exists with this user
+    const { data: existingConv } = await supabase
       .from("conversations")
-      .insert({
-        user_id: userId,
-        subject: subject || "Nouvelle conversation",
-        status: "open",
-        last_message_at: new Date().toISOString(),
-      })
-      .select()
+      .select("id")
+      .eq("user_id", userId)
+      .eq("status", "open")
+      .order("created_at", { ascending: false })
+      .limit(1)
       .single();
 
-    if (convError) {
-      console.error("Error creating conversation:", convError);
-      return NextResponse.json({ error: "Erreur lors de la creation de la conversation" }, { status: 500 });
+    let conversation;
+
+    if (existingConv) {
+      // Use existing conversation
+      conversation = existingConv;
+
+      // Update last_message_at
+      await supabase
+        .from("conversations")
+        .update({ last_message_at: new Date().toISOString() })
+        .eq("id", existingConv.id);
+    } else {
+      // Create a new conversation only if none exists
+      const { data: newConv, error: convError } = await supabase
+        .from("conversations")
+        .insert({
+          user_id: userId,
+          subject: subject || "Nouvelle conversation",
+          status: "open",
+          last_message_at: new Date().toISOString(),
+        })
+        .select()
+        .single();
+
+      if (convError) {
+        console.error("Error creating conversation:", convError);
+        return NextResponse.json({ error: "Erreur lors de la creation de la conversation" }, { status: 500 });
+      }
+
+      conversation = newConv;
     }
 
-    // Insert the first message
+    // Insert the message in the conversation
     const { error: msgError } = await supabase
       .from("messages")
       .insert({
