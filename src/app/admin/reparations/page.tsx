@@ -483,6 +483,52 @@ export default function ReparationsPage() {
               </div>
             </div>
 
+            {/* Note client (envoie un message) */}
+            {selectedRepair.userId && (
+              <div className="rounded-xl border border-blue-500/10 bg-blue-500/5 p-4">
+                <h3 className="text-sm font-medium text-blue-400 mb-2">Note au client</h3>
+                <p className="text-[10px] text-blanc-casse/40 mb-2">Envoie un message au client (il recevra un email + notification)</p>
+                <div className="space-y-2">
+                  <textarea
+                    id="client-note-input"
+                    placeholder="Ex: Votre trottinette est prete, passez la recuperer samedi..."
+                    rows={2}
+                    className="w-full rounded-lg border border-white/10 bg-gris-anthracite px-3 py-2 text-sm text-blanc-casse placeholder:text-blanc-casse/40 focus:border-blue-500/50 focus:outline-none resize-none"
+                  />
+                  <button
+                    onClick={async () => {
+                      const input = document.getElementById("client-note-input") as HTMLTextAreaElement;
+                      const noteContent = input.value.trim();
+                      if (!noteContent) { alert("Ecrivez un message"); return; }
+                      try {
+                        const res = await fetch("/api/admin/conversations/new", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({
+                            userId: selectedRepair.userId,
+                            subject: `Reparation - ${selectedRepair.brand} ${selectedRepair.equipment}`,
+                            content: noteContent,
+                          }),
+                        });
+                        if (res.ok) {
+                          input.value = "";
+                          alert("Message envoye au client !");
+                        } else {
+                          const data = await res.json();
+                          alert(data.error || "Erreur");
+                        }
+                      } catch {
+                        alert("Erreur de connexion");
+                      }
+                    }}
+                    className="rounded-lg bg-blue-500/10 px-3 py-1.5 text-xs font-medium text-blue-400 hover:bg-blue-500/20 transition-colors"
+                  >
+                    Envoyer au client
+                  </button>
+                </div>
+              </div>
+            )}
+
             <div className="rounded-xl border border-white/5 bg-noir-mat/50 p-4">
               <h3 className="text-sm font-medium text-blanc-casse/60 mb-2">Statut actuel</h3>
               <span className={`flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium ${statusStyles[selectedRepair.status] || ""}`}>
