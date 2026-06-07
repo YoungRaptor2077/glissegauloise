@@ -5,6 +5,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ShoppingCart, Check, Minus, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCart } from "@/lib/hooks/useCart";
+import { useUser } from "@/lib/hooks/useUser";
+import Link from "next/link";
 import type { ProductDisplay } from "@/lib/data/product-adapter";
 
 interface AddToCartButtonProps {
@@ -14,6 +16,7 @@ interface AddToCartButtonProps {
 
 export function AddToCartButton({ product, className }: AddToCartButtonProps) {
   const { addItem } = useCart();
+  const { user, loading: userLoading } = useUser();
   const [quantity, setQuantity] = useState(1);
   const [showSuccess, setShowSuccess] = useState(false);
 
@@ -36,6 +39,33 @@ export function AddToCartButton({ product, className }: AddToCartButtonProps) {
     setShowSuccess(true);
     setTimeout(() => setShowSuccess(false), 2000);
   };
+
+  if (userLoading) {
+    return (
+      <div className={cn("space-y-3", className)}>
+        <div className="w-full py-3.5 rounded-xl bg-gris-anthracite-light text-blanc-casse/30 text-sm text-center">
+          Chargement...
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className={cn("space-y-3", className)}>
+        <p className="text-sm text-blanc-casse/60 text-center">
+          Vous devez creer un compte pour continuer
+        </p>
+        <Link
+          href="/connexion"
+          className="w-full py-3.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 bg-vert-neon text-noir-mat hover:bg-vert-neon-dark shadow-lg shadow-vert-neon/20 transition-all duration-300"
+        >
+          <ShoppingCart className="h-5 w-5" />
+          Se connecter
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className={cn("space-y-3", className)}>

@@ -4,11 +4,15 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { ShoppingBag, Truck, CreditCard, Loader2 } from "lucide-react";
 import { useCart } from "@/lib/hooks/useCart";
+import { useUser } from "@/lib/hooks/useUser";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 
 export default function CheckoutPage() {
   const { items, total } = useCart();
+  const { user, loading: userLoading } = useUser();
+  const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [loyaltyData, setLoyaltyData] = useState<{ hasReward: boolean; rewardPercent: number; points: number } | null>(null);
   const [discountApplied, setDiscountApplied] = useState(false);
@@ -38,6 +42,13 @@ export default function CheckoutPage() {
     }
     checkLoyalty();
   }, []);
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!userLoading && !user) {
+      router.push("/connexion");
+    }
+  }, [user, userLoading, router]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -87,6 +98,14 @@ export default function CheckoutPage() {
       setIsLoading(false);
     }
   };
+
+  if (userLoading || (!user && !userLoading)) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-vert-neon" />
+      </div>
+    );
+  }
 
   if (items.length === 0) {
     return (

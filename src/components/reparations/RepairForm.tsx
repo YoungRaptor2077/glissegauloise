@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { Send } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -8,6 +9,8 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { FileUpload } from "./FileUpload";
 import { createClient } from "@/lib/supabase/client";
+import { useUser } from "@/lib/hooks/useUser";
+import Link from "next/link";
 
 const BRANDS = [
   "Dualtron",
@@ -45,6 +48,8 @@ interface FormState {
 }
 
 export function RepairForm() {
+  const { user, loading: userLoading } = useUser();
+  const searchParams = useSearchParams();
   const [form, setForm] = useState<FormState>({
     marque: "",
     modele: "",
@@ -61,6 +66,22 @@ export function RepairForm() {
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [videoFiles, setVideoFiles] = useState<File[]>([]);
 
+  // Pre-fill from query params (diagnostic auto-fill)
+  useEffect(() => {
+    const marque = searchParams.get("marque");
+    const modele = searchParams.get("modele");
+    const probleme = searchParams.get("probleme");
+    const piece = searchParams.get("piece");
+
+    if (marque || modele || probleme || piece) {
+      setForm((prev) => ({
+        ...prev,
+        marque: marque || prev.marque,
+        modele: modele || prev.modele,
+        description: [probleme, piece].filter(Boolean).join(" - ") || prev.description,
+      }));
+    }
+  }, [searchParams]);
   const handleChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
@@ -119,6 +140,33 @@ export function RepairForm() {
       setIsSubmitting(false);
     }
   };
+
+  if (userLoading) {
+    return (
+      <div className="rounded-2xl bg-gris-anthracite border border-white/5 p-6 lg:p-8 text-center">
+        <p className="text-blanc-casse/60">Chargement...</p>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="rounded-2xl bg-gris-anthracite border border-white/5 p-6 lg:p-8 text-center space-y-4">
+        <h3 className="text-xl font-bold text-blanc-casse">
+          Demande de reparation
+        </h3>
+        <p className="text-blanc-casse/60">
+          Vous devez creer un compte pour continuer
+        </p>
+        <Link
+          href="/connexion"
+          className="inline-flex items-center justify-center px-6 py-3 rounded-xl bg-vert-neon text-noir-mat font-semibold hover:opacity-90 transition-opacity"
+        >
+          Se connecter
+        </Link>
+      </div>
+    );
+  }
 
   if (submitted) {
     return (

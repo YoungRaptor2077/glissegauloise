@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { MapPin, Phone, Mail, Clock } from "lucide-react";
-import { COMPANY_INFO, NAV_LINKS, LEGAL_LINKS, BUSINESS_HOURS } from "@/lib/constants";
+import { COMPANY_INFO, NAV_LINKS, LEGAL_LINKS, BUSINESS_HOURS, ONLINE_SERVICE_HOURS } from "@/lib/constants";
 
 function formatHours(day: string, schedule: { open: string; close: string } | null): string {
   if (!schedule) return `${day}: Ferme`;
@@ -81,17 +81,20 @@ export function Footer() {
             <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-blanc-casse">
               Horaires
             </h3>
-            <div className="space-y-1.5">
+            <div className="space-y-3">
               <div className="flex items-start gap-2 text-blanc-casse/60">
                 <Clock size={16} className="mt-0.5 shrink-0 text-vert-neon/70" />
-                <div className="space-y-1 text-xs">
-                  <p>{formatHours("Lundi", BUSINESS_HOURS.monday)}</p>
-                  <p>{formatHours("Mardi", BUSINESS_HOURS.tuesday)}</p>
-                  <p>{formatHours("Mercredi", BUSINESS_HOURS.wednesday)}</p>
-                  <p>{formatHours("Jeudi", BUSINESS_HOURS.thursday)}</p>
-                  <p>{formatHours("Vendredi", BUSINESS_HOURS.friday)}</p>
-                  <p>{formatHours("Samedi", BUSINESS_HOURS.saturday)}</p>
-                  <p>{formatHours("Dimanche", BUSINESS_HOURS.sunday)}</p>
+                <div className="space-y-2 text-xs">
+                  <div>
+                    <p className="font-medium text-blanc-casse/80 mb-1">Atelier</p>
+                    <p>{formatHours("Samedi", BUSINESS_HOURS.saturday)}</p>
+                    <p>{formatHours("Dimanche", BUSINESS_HOURS.sunday)}</p>
+                    <p>Lundi - Vendredi: Ferme</p>
+                  </div>
+                  <div>
+                    <p className="font-medium text-blanc-casse/80 mb-1">Service en ligne</p>
+                    <p>Tous les jours: {ONLINE_SERVICE_HOURS.everyday.open} - {ONLINE_SERVICE_HOURS.everyday.close}</p>
+                  </div>
                 </div>
               </div>
             </div>

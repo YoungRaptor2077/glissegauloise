@@ -21,7 +21,7 @@ const BRANDS = [
 
 const PROBLEMS = [
   { id: "pneu", label: "Pneu creve / use", icon: "\u{1F6DE}", parts: ["Pneu", "Chambre a air", "Valve"] },
-  { id: "frein", label: "Probleme de freinage", icon: "\u{1F6D1}", parts: ["Plaquettes de frein", "Disque de frein", "Cable de frein", "Levier de frein"] },
+  { id: "frein", label: "Probleme de freinage", icon: "\u{1F6D1}", parts: ["Plaquettes de frein", "Disque de frein", "Cable de frein", "Levier de frein", "Frein hydraulique", "Fuite hydraulique"] },
   { id: "batterie", label: "Probleme de batterie", icon: "\u{1F50B}", parts: ["Batterie complete", "BMS", "Chargeur", "Connecteur batterie"] },
   { id: "moteur", label: "Probleme moteur", icon: "\u26A1", parts: ["Moteur complet", "Roulement moteur", "Cable moteur", "Capteur Hall"] },
   { id: "controleur", label: "Controleur / electronique", icon: "\u{1F5A5}\uFE0F", parts: ["Controleur", "Display/Afficheur", "Throttle/Accelerateur", "Cablage"] },
@@ -303,7 +303,7 @@ export default function DiagnosticPage() {
                   Voir dans la boutique
                 </Link>
                 <Link
-                  href="/reparations"
+                  href={`/reparations?marque=${encodeURIComponent(selectedBrand?.name || "")}&modele=${encodeURIComponent(modelName)}&probleme=${encodeURIComponent(selectedProblem?.label || "")}&piece=${encodeURIComponent(selectedPart || "")}`}
                   className="flex items-center justify-center gap-2 p-4 rounded-xl border border-white/10 bg-gris-anthracite text-sm font-medium text-blanc-casse hover:border-vert-neon/40 transition-colors"
                 >
                   <Wrench size={16} />

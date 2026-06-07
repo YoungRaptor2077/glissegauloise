@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import { MapPin, Phone, Mail, Clock } from "lucide-react";
-import { COMPANY_INFO, BUSINESS_HOURS } from "@/lib/constants";
+import { COMPANY_INFO, BUSINESS_HOURS, ONLINE_SERVICE_HOURS } from "@/lib/constants";
 
 const DAY_LABELS: Record<string, string> = {
   monday: "Lundi",
@@ -83,26 +83,35 @@ export function BusinessInfo() {
           <p className="text-sm font-medium text-blanc-casse mb-2">
             Horaires d&apos;ouverture
           </p>
-          <table className="w-full">
-            <tbody>
-              {Object.entries(BUSINESS_HOURS).map(([day, schedule]) => (
-                <tr key={day} className="border-b border-white/5 last:border-0">
-                  <td className="py-1.5 text-sm text-blanc-casse/70">
-                    {DAY_LABELS[day]}
-                  </td>
-                  <td className="py-1.5 text-sm text-right">
-                    {schedule ? (
-                      <span className="text-blanc-casse/80">
-                        {schedule.open} - {schedule.close}
-                      </span>
-                    ) : (
-                      <span className="text-red-400/80">Ferme</span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <div className="space-y-3">
+            <div>
+              <p className="text-xs font-medium text-blanc-casse/80 mb-1">Atelier</p>
+              <table className="w-full">
+                <tbody>
+                  {Object.entries(BUSINESS_HOURS).map(([day, schedule]) => (
+                    <tr key={day} className="border-b border-white/5 last:border-0">
+                      <td className="py-1.5 text-sm text-blanc-casse/70">
+                        {DAY_LABELS[day]}
+                      </td>
+                      <td className="py-1.5 text-sm text-right">
+                        {schedule ? (
+                          <span className="text-blanc-casse/80">
+                            {schedule.open} - {schedule.close}
+                          </span>
+                        ) : (
+                          <span className="text-red-400/80">Ferme</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div>
+              <p className="text-xs font-medium text-blanc-casse/80 mb-1">Service en ligne</p>
+              <p className="text-sm text-blanc-casse/70">Tous les jours: {ONLINE_SERVICE_HOURS.everyday.open} - {ONLINE_SERVICE_HOURS.everyday.close}</p>
+            </div>
+          </div>
         </div>
       </div>
     </motion.div>

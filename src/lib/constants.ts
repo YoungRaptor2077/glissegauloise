@@ -16,13 +16,17 @@ export interface WeekSchedule {
 }
 
 export const BUSINESS_HOURS: WeekSchedule = {
-  monday: { open: "09:00", close: "18:00" },
+  monday: null,
   tuesday: null,
-  wednesday: { open: "09:00", close: "18:00" },
-  thursday: { open: "09:00", close: "18:00" },
-  friday: { open: "09:00", close: "18:00" },
+  wednesday: null,
+  thursday: null,
+  friday: null,
   saturday: { open: "09:00", close: "17:00" },
-  sunday: null,
+  sunday: { open: "09:00", close: "17:00" },
+};
+
+export const ONLINE_SERVICE_HOURS = {
+  everyday: { open: "09:00", close: "17:00" },
 };
 
 export const COMPANY_INFO = {
