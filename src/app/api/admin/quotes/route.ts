@@ -36,6 +36,31 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
+    // Auto-create a conversation for this user if one doesn't already exist
+    if (userId) {
+      try {
+        const { data: existingConv } = await supabase
+          .from("conversations")
+          .select("id")
+          .eq("user_id", userId)
+          .limit(1)
+          .single();
+
+        if (!existingConv) {
+          await supabase
+            .from("conversations")
+            .insert({
+              user_id: userId,
+              subject: "Votre devis",
+              status: "open",
+              last_message_at: new Date().toISOString(),
+            });
+        }
+      } catch {
+        // Non-blocking: conversation creation failure should not affect quote creation
+      }
+    }
+
     return NextResponse.json({ success: true, quote: data });
   } catch (error) {
     console.error("Quote creation error:", error);
