@@ -148,24 +148,38 @@ export default function ReparationsPage() {
       if (data) {
         const userIds = [...new Set(data.map((r) => r.user_id).filter(Boolean))] as string[];
         const profileMap: Record<string, Profile> = {};
+        const emailProfileMap: Record<string, Profile> = {};
 
-        if (userIds.length > 0) {
-          const { data: profiles } = await supabase
-            .from("profiles")
-            .select("*")
-            .in("id", userIds) as { data: Profile[] | null };
-          if (profiles) {
-            profiles.forEach((p) => { profileMap[p.id] = p; });
-          }
+        // Fetch all profiles to match by user_id OR email
+        const { data: allProfiles } = await supabase
+          .from("profiles")
+          .select("*") as { data: Profile[] | null };
+
+        if (allProfiles) {
+          allProfiles.forEach((p) => {
+            profileMap[p.id] = p;
+            if (p.email) emailProfileMap[p.email.toLowerCase()] = p;
+          });
         }
 
         setRepairs(
           data.map((r) => {
-            const profile = r.user_id ? profileMap[r.user_id] : null;
+            let profile = r.user_id ? profileMap[r.user_id] : null;
+            let resolvedUserId = r.user_id || null;
+
+            // If no user_id but has email, try to match by email
+            if (!profile && r.email) {
+              const emailMatch = emailProfileMap[r.email.toLowerCase()];
+              if (emailMatch) {
+                profile = emailMatch;
+                resolvedUserId = emailMatch.id;
+              }
+            }
+
             return {
               id: r.id.substring(0, 8).toUpperCase(),
               rawId: r.id,
-              userId: r.user_id || null,
+              userId: resolvedUserId,
               client: profile?.full_name || "Client",
               equipment: [r.brand, r.model].filter(Boolean).join(" "),
               brand: r.brand || "",
