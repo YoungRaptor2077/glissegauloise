@@ -212,6 +212,8 @@ export interface Database {
           admin_notes: string | null;
           scheduled_date: string | null;
           completed_at: string | null;
+          status_history: { status: string; date: string }[] | null;
+          estimated_delay: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -234,6 +236,8 @@ export interface Database {
           admin_notes?: string | null;
           scheduled_date?: string | null;
           completed_at?: string | null;
+          status_history?: { status: string; date: string }[] | null;
+          estimated_delay?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -256,6 +260,8 @@ export interface Database {
           admin_notes?: string | null;
           scheduled_date?: string | null;
           completed_at?: string | null;
+          status_history?: { status: string; date: string }[] | null;
+          estimated_delay?: string | null;
           created_at?: string;
           updated_at?: string;
         };

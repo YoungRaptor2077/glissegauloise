@@ -179,6 +179,11 @@ export default function ReparationsPage() {
                       <p className="text-sm text-blanc-casse/70 mt-2">
                         {repair.issue_description}
                       </p>
+                      {(repair as unknown as { estimated_delay?: string | null }).estimated_delay && (
+                        <p className="text-xs text-vert-neon/80 mt-1">
+                          Delai estime : {(repair as unknown as { estimated_delay: string }).estimated_delay}
+                        </p>
+                      )}
                       {repair.status === "closed" ? (
                         <div className="flex items-center gap-2 mt-3">
                           <CheckCircle2 size={14} className="text-gray-400" />

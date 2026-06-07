@@ -10,6 +10,11 @@ import type { Repair, Profile } from "@/types/database";
 
 type RepairStatus = "all" | "received" | "diagnostic" | "awaiting_decision" | "waiting_parts" | "in_progress" | "testing" | "completed" | "ready_pickup" | "closed";
 
+interface StatusHistoryEntry {
+  status: string;
+  date: string;
+}
+
 interface RepairRow {
   id: string;
   rawId: string;
@@ -27,6 +32,8 @@ interface RepairRow {
   contactPreference: string;
   phone: string | null;
   email: string | null;
+  statusHistory: StatusHistoryEntry[];
+  estimatedDelay: string | null;
   [key: string]: unknown;
 }
 
@@ -197,6 +204,8 @@ export default function ReparationsPage() {
               contactPreference: r.contact_preference || "email",
               phone: r.phone || null,
               email: r.email || null,
+              statusHistory: (r as unknown as { status_history?: StatusHistoryEntry[] }).status_history || [],
+              estimatedDelay: (r as unknown as { estimated_delay?: string | null }).estimated_delay || null,
             };
           })
         );
@@ -210,17 +219,23 @@ export default function ReparationsPage() {
   const handleStatusChange = async (repairId: string, newStatus: string) => {
     setError(null);
     const supabase = createClient();
+
+    // Get current status_history
+    const repair = repairs.find((r) => r.rawId === repairId);
+    const currentHistory = repair?.statusHistory || [];
+    const newHistory = [...currentHistory, { status: newStatus, date: new Date().toISOString() }];
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabase.from("repairs") as any)
-      .update({ status: newStatus })
+      .update({ status: newStatus, status_history: newHistory })
       .eq("id", repairId);
 
     if (!error) {
       setRepairs((prev) =>
-        prev.map((r) => (r.rawId === repairId ? { ...r, status: newStatus } : r))
+        prev.map((r) => (r.rawId === repairId ? { ...r, status: newStatus, statusHistory: newHistory } : r))
       );
       if (selectedRepair?.rawId === repairId) {
-        setSelectedRepair((prev) => prev ? { ...prev, status: newStatus } : null);
+        setSelectedRepair((prev) => prev ? { ...prev, status: newStatus, statusHistory: newHistory } : null);
       }
 
       // Send notification to client
@@ -558,6 +573,45 @@ export default function ReparationsPage() {
               <span className={`flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium ${statusStyles[selectedRepair.status] || ""}`}>
                 {statusIcons[selectedRepair.status]} {statusLabels[selectedRepair.status]}
               </span>
+              {/* Status history inline */}
+              {selectedRepair.statusHistory.length > 0 && (
+                <p className="mt-3 text-[11px] text-blanc-casse/40 leading-relaxed">
+                  {selectedRepair.statusHistory.map((h, i) => (
+                    <span key={i}>
+                      {i > 0 && <span className="mx-1 text-blanc-casse/20">{"\u2192"}</span>}
+                      <span>{statusLabels[h.status] || h.status}: {new Date(h.date).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" })}</span>
+                    </span>
+                  ))}
+                </p>
+              )}
+            </div>
+
+            {/* Delai estime */}
+            <div className="rounded-xl border border-white/5 bg-noir-mat/50 p-4">
+              <h3 className="text-sm font-medium text-blanc-casse/60 mb-2">Delai estime (optionnel)</h3>
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  defaultValue={selectedRepair.estimatedDelay || ""}
+                  id="estimated-delay-input"
+                  placeholder="Ex: 2-3 jours, 1 semaine..."
+                  className="w-full rounded-lg border border-white/10 bg-gris-anthracite px-3 py-2 text-sm text-blanc-casse placeholder:text-blanc-casse/40 focus:border-vert-neon/50 focus:outline-none"
+                />
+                <button
+                  onClick={async () => {
+                    const input = document.getElementById("estimated-delay-input") as HTMLInputElement;
+                    const value = input.value.trim() || null;
+                    const supabase = createClient();
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    await (supabase.from("repairs") as any).update({ estimated_delay: value }).eq("id", selectedRepair.rawId);
+                    setRepairs(prev => prev.map(r => r.rawId === selectedRepair.rawId ? { ...r, estimatedDelay: value } : r));
+                    setSelectedRepair(prev => prev ? { ...prev, estimatedDelay: value } : null);
+                  }}
+                  className="shrink-0 rounded-lg bg-vert-neon px-3 py-2 text-xs font-semibold text-noir-mat hover:opacity-90 transition-opacity"
+                >
+                  OK
+                </button>
+              </div>
             </div>
 
             {/* Status Timeline */}
