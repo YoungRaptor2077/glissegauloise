@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
         .update({ status: "sent" })
         .eq("id", quoteId);
 
-      return NextResponse.json({ success: true, paymentUrl: null });
+      return NextResponse.json({ success: true, paymentUrl: null, emailSent: false, emailError: "Devis a 0 EUR - pas d'email envoye" });
     }
 
     // Create a one-time price
@@ -81,93 +81,117 @@ export async function POST(request: NextRequest) {
       .eq("id", quoteId);
 
     // Send email to client with payment link
-    if (quote.user_id) {
+    let emailSent = false;
+    let emailError: string | undefined;
+
+    if (!quote.user_id) {
+      emailError = "Pas de client associe au devis (user_id manquant)";
+      console.warn("[Quote Send] No user_id on quote:", quoteId);
+    } else {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: profile } = await (supabase.from("profiles") as any)
+      const { data: profile, error: profileError } = await (supabase.from("profiles") as any)
         .select("email, full_name")
         .eq("id", quote.user_id)
         .single();
 
-      if (profile?.email) {
+      if (profileError) {
+        emailError = `Erreur lors de la recuperation du profil client: ${profileError.message}`;
+        console.error("[Quote Send] Profile lookup error:", profileError);
+      } else if (!profile?.email) {
+        emailError = "Le client n'a pas d'adresse email dans son profil";
+        console.warn("[Quote Send] No email for user:", quote.user_id);
+      } else {
         try {
+          if (!process.env.RESEND_API_KEY) {
+            throw new Error("RESEND_API_KEY non configuree");
+          }
+
           const { Resend } = await import("resend");
           const resend = new Resend(process.env.RESEND_API_KEY);
-          if (resend) {
-            // Build line items HTML
-            const lineItems = quote.line_items || [];
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const lineItemsHtml = lineItems.map((item: any) =>
-              `<tr>
-                <td style="padding: 8px 0; border-bottom: 1px solid #2a2a2a; color: #f5f5f0;">${item.description || "Article"}${item.note ? `<br/><span style="font-size: 11px; color: #aaa; font-style: italic;">${item.note}</span>` : ""}${item.link ? `<br/><a href="${item.link}" target="_blank" rel="noopener noreferrer" style="display: inline-block; margin-top: 4px; padding: 2px 8px; background: rgba(0,255,136,0.1); color: #00ff88; font-size: 12px; border-radius: 4px; text-decoration: none;">Voir la piece</a><div style="margin-top: 6px; padding: 10px 12px; background: #1a1a1a; border-left: 3px solid #00ff88; border-radius: 6px; font-size: 13px; color: #ccc; line-height: 1.7;"><strong style="color: #f5f5f0; font-size: 13px;">Lors de votre commande, vous avez 2 options :</strong><br/>1. <span style="color: #f5f5f0;">Livraison chez vous</span> - Vous recevez la piece et vous nous la ramenez a l'atelier<br/>2. <span style="color: #f5f5f0;">Livraison directe a l'atelier</span> - Faites livrer au nom de GlisseGauloisse, 49 Route de Margency, 95600 Eaubonne</div>` : ""}</td>
-                <td style="padding: 8px 0; border-bottom: 1px solid #2a2a2a; color: #ccc; text-align: center;">${item.quantity || 1}</td>
-                <td style="padding: 8px 0; border-bottom: 1px solid #2a2a2a; color: #ccc; text-align: right;">${(item.unitPrice || 0).toFixed(2)} EUR</td>
-                <td style="padding: 8px 0; border-bottom: 1px solid #2a2a2a; color: #f5f5f0; text-align: right; font-weight: bold;">${((item.quantity || 1) * (item.unitPrice || 0)).toFixed(2)} EUR</td>
-              </tr>`
-            ).join("");
 
-            const laborCost = quote.labor_cost || 0;
-            const notesText = quote.notes ? `<p style="color: #aaa; font-size: 13px; margin-top: 16px;"><em>Notes : ${quote.notes}</em></p>` : "";
+          // Build line items HTML
+          const lineItems = quote.line_items || [];
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const lineItemsHtml = lineItems.map((item: any) =>
+            `<tr>
+              <td style="padding: 8px 0; border-bottom: 1px solid #2a2a2a; color: #f5f5f0;">${item.description || "Article"}${item.note ? `<br/><span style="font-size: 11px; color: #aaa; font-style: italic;">${item.note}</span>` : ""}${item.link ? `<br/><a href="${item.link}" target="_blank" rel="noopener noreferrer" style="display: inline-block; margin-top: 4px; padding: 2px 8px; background: rgba(0,255,136,0.1); color: #00ff88; font-size: 12px; border-radius: 4px; text-decoration: none;">Voir la piece</a><div style="margin-top: 6px; padding: 10px 12px; background: #1a1a1a; border-left: 3px solid #00ff88; border-radius: 6px; font-size: 13px; color: #ccc; line-height: 1.7;"><strong style="color: #f5f5f0; font-size: 13px;">Lors de votre commande, vous avez 2 options :</strong><br/>1. <span style="color: #f5f5f0;">Livraison chez vous</span> - Vous recevez la piece et vous nous la ramenez a l'atelier<br/>2. <span style="color: #f5f5f0;">Livraison directe a l'atelier</span> - Faites livrer au nom de GlisseGauloisse, 49 Route de Margency, 95600 Eaubonne</div>` : ""}</td>
+              <td style="padding: 8px 0; border-bottom: 1px solid #2a2a2a; color: #ccc; text-align: center;">${item.quantity || 1}</td>
+              <td style="padding: 8px 0; border-bottom: 1px solid #2a2a2a; color: #ccc; text-align: right;">${(item.unitPrice || 0).toFixed(2)} EUR</td>
+              <td style="padding: 8px 0; border-bottom: 1px solid #2a2a2a; color: #f5f5f0; text-align: right; font-weight: bold;">${((item.quantity || 1) * (item.unitPrice || 0)).toFixed(2)} EUR</td>
+            </tr>`
+          ).join("");
 
-            await resend.emails.send({
-              from: "GlisseGauloisse <noreply@glissegauloisse.com>",
-              to: profile.email,
-              subject: `Votre devis GlisseGauloisse - ${quote.total?.toFixed(2)} EUR`,
-              html: `
-                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #0a0a0a; color: #f5f5f0; padding: 40px; border-radius: 16px;">
-                  <h1 style="color: #00ff88; font-size: 24px; margin-bottom: 20px;">Votre devis est pret</h1>
-                  <p>Bonjour ${profile.full_name || ""},</p>
-                  <p>Votre devis de <strong style="color: #00ff88;">${quote.total?.toFixed(2)} EUR</strong> est pret. Vous pouvez le regler en ligne :</p>
+          const laborCost = quote.labor_cost || 0;
+          const notesText = quote.notes ? `<p style="color: #aaa; font-size: 13px; margin-top: 16px;"><em>Notes : ${quote.notes}</em></p>` : "";
 
-                  <p style="margin: 24px 0; text-align: center;">
-                    <a href="${paymentLink.url}" style="display: inline-block; background: #00ff88; color: #0a0a0a; padding: 16px 32px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 18px;">Payer maintenant</a>
-                  </p>
+          const emailResult = await resend.emails.send({
+            from: "GlisseGauloisse <noreply@glissegauloisse.com>",
+            to: profile.email,
+            subject: `Votre devis GlisseGauloisse - ${quote.total?.toFixed(2)} EUR`,
+            html: `
+              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #0a0a0a; color: #f5f5f0; padding: 40px; border-radius: 16px;">
+                <h1 style="color: #00ff88; font-size: 24px; margin-bottom: 20px;">Votre devis est pret</h1>
+                <p>Bonjour ${profile.full_name || ""},</p>
+                <p>Votre devis de <strong style="color: #00ff88;">${quote.total?.toFixed(2)} EUR</strong> est pret. Vous pouvez le regler en ligne :</p>
 
-                  <p style="color: #888; font-size: 13px; text-align: center; margin-bottom: 30px;">Paiement securise par Stripe. Possibilite de payer en 3 fois.</p>
+                <p style="margin: 24px 0; text-align: center;">
+                  <a href="${paymentLink.url}" style="display: inline-block; background: #00ff88; color: #0a0a0a; padding: 16px 32px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 18px;">Payer maintenant</a>
+                </p>
 
-                  <hr style="border: none; border-top: 1px solid #2a2a2a; margin: 20px 0;" />
+                <p style="color: #888; font-size: 13px; text-align: center; margin-bottom: 30px;">Paiement securise par Stripe. Possibilite de payer en 3 fois.</p>
 
-                  <p style="color: #aaa; font-size: 14px;">Voici le detail de votre devis :</p>
+                <hr style="border: none; border-top: 1px solid #2a2a2a; margin: 20px 0;" />
 
-                  <table style="width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 14px;">
-                    <thead>
-                      <tr style="border-bottom: 2px solid #333;">
-                        <th style="padding: 8px 0; text-align: left; color: #888;">Description</th>
-                        <th style="padding: 8px 0; text-align: center; color: #888;">Qte</th>
-                        <th style="padding: 8px 0; text-align: right; color: #888;">Prix unit.</th>
-                        <th style="padding: 8px 0; text-align: right; color: #888;">Total</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      ${lineItemsHtml}
-                    </tbody>
-                  </table>
+                <p style="color: #aaa; font-size: 14px;">Voici le detail de votre devis :</p>
 
-                  <div style="background: #1a1a1a; padding: 16px; border-radius: 8px; margin: 20px 0;">
-                    ${laborCost > 0 ? `<div style="display: flex; justify-content: space-between; margin-bottom: 8px;"><span style="color: #ccc;">Main d'oeuvre</span><span style="color: #f5f5f0;">${laborCost.toFixed(2)} EUR</span></div>` : ""}
-                    <div style="display: flex; justify-content: space-between; padding-top: 8px; border-top: 1px solid #333;"><span style="color: #00ff88; font-weight: bold; font-size: 16px;">TOTAL</span><span style="color: #00ff88; font-weight: bold; font-size: 16px;">${quote.total?.toFixed(2)} EUR</span></div>
-                  </div>
+                <table style="width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 14px;">
+                  <thead>
+                    <tr style="border-bottom: 2px solid #333;">
+                      <th style="padding: 8px 0; text-align: left; color: #888;">Description</th>
+                      <th style="padding: 8px 0; text-align: center; color: #888;">Qte</th>
+                      <th style="padding: 8px 0; text-align: right; color: #888;">Prix unit.</th>
+                      <th style="padding: 8px 0; text-align: right; color: #888;">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${lineItemsHtml}
+                  </tbody>
+                </table>
 
-                  ${notesText}
-
-                  <p style="margin-top: 24px;">Vous pouvez regler en ligne en cliquant sur le bouton ci-dessous :</p>
-                  <p style="margin: 30px 0; text-align: center;">
-                    <a href="${paymentLink.url}" style="display: inline-block; background: #00ff88; color: #0a0a0a; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 16px;">Payer maintenant</a>
-                  </p>
-                  <p style="color: #888; font-size: 13px;">Paiement securise par Stripe. Possibilite de payer en 3 fois.</p>
-                  <hr style="border: none; border-top: 1px solid #2a2a2a; margin: 30px 0;" />
-                  <p style="color: #888; font-size: 12px;">GlisseGauloisse - 49 Route de Margency, 95600 Eaubonne<br/>07 86 75 79 63</p>
+                <div style="background: #1a1a1a; padding: 16px; border-radius: 8px; margin: 20px 0;">
+                  ${laborCost > 0 ? `<div style="display: flex; justify-content: space-between; margin-bottom: 8px;"><span style="color: #ccc;">Main d'oeuvre</span><span style="color: #f5f5f0;">${laborCost.toFixed(2)} EUR</span></div>` : ""}
+                  <div style="display: flex; justify-content: space-between; padding-top: 8px; border-top: 1px solid #333;"><span style="color: #00ff88; font-weight: bold; font-size: 16px;">TOTAL</span><span style="color: #00ff88; font-weight: bold; font-size: 16px;">${quote.total?.toFixed(2)} EUR</span></div>
                 </div>
-              `,
-            });
+
+                ${notesText}
+
+                <p style="margin-top: 24px;">Vous pouvez regler en ligne en cliquant sur le bouton ci-dessous :</p>
+                <p style="margin: 30px 0; text-align: center;">
+                  <a href="${paymentLink.url}" style="display: inline-block; background: #00ff88; color: #0a0a0a; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 16px;">Payer maintenant</a>
+                </p>
+                <p style="color: #888; font-size: 13px;">Paiement securise par Stripe. Possibilite de payer en 3 fois.</p>
+                <hr style="border: none; border-top: 1px solid #2a2a2a; margin: 30px 0;" />
+                <p style="color: #888; font-size: 12px;">GlisseGauloisse - 49 Route de Margency, 95600 Eaubonne<br/>07 86 75 79 63</p>
+              </div>
+            `,
+          });
+
+          if (emailResult.error) {
+            emailError = `Resend API error: ${emailResult.error.message}`;
+            console.error("[Quote Send] Resend API error:", emailResult.error);
+          } else {
+            emailSent = true;
+            console.log("[Quote Send] Email sent successfully to:", profile.email, "id:", emailResult.data?.id);
           }
         } catch (emailErr) {
-          console.error("Email send error for quote:", emailErr);
-          // Non-blocking - quote is still sent even if email fails
+          const errMsg = emailErr instanceof Error ? emailErr.message : String(emailErr);
+          emailError = `Erreur envoi email: ${errMsg}`;
+          console.error("[Quote Send] Email send error for quote:", quoteId, "error:", emailErr);
         }
       }
     }
 
-    return NextResponse.json({ success: true, paymentUrl: paymentLink.url });
+    return NextResponse.json({ success: true, paymentUrl: paymentLink.url, emailSent, emailError });
   } catch (error) {
     console.error("Quote send error:", error);
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });

@@ -119,11 +119,25 @@ export default function NouveauDevisPage() {
           body: JSON.stringify({ quoteId: data.quote.id }),
         });
         const sendData = await sendRes.json();
+
+        if (!sendRes.ok) {
+          setError(sendData.error || "Erreur lors de l'envoi du devis");
+          return;
+        }
+
+        let message = "Devis cree et envoye !";
         if (sendData?.paymentUrl) {
           navigator.clipboard.writeText(sendData.paymentUrl);
-          setSuccess("Devis cree et envoye ! Lien de paiement copie dans le presse-papier.");
+          message = "Devis cree et envoye ! Lien de paiement copie dans le presse-papier.";
+        }
+        if (sendData?.emailSent === false) {
+          const reason = sendData.emailError || "Erreur inconnue";
+          setError(`Devis envoye mais email NON envoye: ${reason}`);
+          setSuccess(message);
+          setTimeout(() => router.push("/admin/devis"), 4000);
+          return;
         } else {
-          setSuccess("Devis cree et envoye !");
+          setSuccess(message);
         }
       } else {
         setSuccess("Devis enregistre !");
