@@ -6,6 +6,7 @@ import { Send, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { useToast } from "@/providers/ToastProvider";
 
 const SUBJECTS = [
   "Question generale",
@@ -33,6 +34,7 @@ export function ContactForm() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const { toast } = useToast();
 
   const handleChange = (
     e: React.ChangeEvent<
@@ -55,6 +57,7 @@ export function ContactForm() {
         throw new Error("Failed to submit");
       }
       setSubmitted(true);
+      toast("Message envoye !");
     } catch (error) {
       console.error("Contact form error:", error);
     } finally {

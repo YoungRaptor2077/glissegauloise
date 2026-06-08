@@ -8,6 +8,7 @@ import { useParams } from "next/navigation";
 import { ChatBubble } from "@/components/messages/ChatBubble";
 import { ChatInput } from "@/components/messages/ChatInput";
 import { Badge } from "@/components/ui/Badge";
+import { useToast } from "@/providers/ToastProvider";
 
 interface MessageItem {
   id: string;
@@ -37,6 +38,7 @@ function formatTimestamp(dateStr: string): string {
 export default function ConversationDetailPage() {
   const params = useParams();
   const conversationId = params.id as string;
+  const { toast } = useToast();
 
   const [messages, setMessages] = useState<MessageItem[]>([]);
   const [conversation, setConversation] = useState<ConversationInfo | null>(
@@ -139,6 +141,7 @@ export default function ConversationDetailPage() {
               return [...prev, data.message];
             });
           }
+          toast("Message envoye !");
         } else {
           setError("Erreur lors de l'envoi du message.");
         }
@@ -146,7 +149,7 @@ export default function ConversationDetailPage() {
         setError("Erreur lors de l'envoi du message.");
       }
     },
-    [conversationId]
+    [conversationId, toast]
   );
 
   if (loading) {

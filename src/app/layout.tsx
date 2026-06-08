@@ -6,6 +6,8 @@ import { CartProvider } from "@/components/cart/CartProvider";
 import { CartDrawer } from "@/components/cart/CartDrawer";
 import { CookieBanner } from "@/components/layout/CookieBanner";
 import { WhatsAppButton } from "@/components/layout/WhatsAppButton";
+import { ToastProvider } from "@/providers/ToastProvider";
+import { PageTransition } from "@/components/layout/PageTransition";
 import "./globals.css";
 
 const inter = Inter({
@@ -160,14 +162,18 @@ export default function RootLayout({
             })
           }}
         />
-        <CartProvider>
-          <Header />
-          <main className="pt-16 lg:pt-20">{children}</main>
-          <Footer />
-          <CartDrawer />
-          <CookieBanner />
-          <WhatsAppButton />
-        </CartProvider>
+        <ToastProvider>
+          <CartProvider>
+            <Header />
+            <main className="pt-16 lg:pt-20">
+              <PageTransition>{children}</PageTransition>
+            </main>
+            <Footer />
+            <CartDrawer />
+            <CookieBanner />
+            <WhatsAppButton />
+          </CartProvider>
+        </ToastProvider>
       </body>
     </html>
   );

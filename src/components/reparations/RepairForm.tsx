@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/Input";
 import { FileUpload } from "./FileUpload";
 import { createClient } from "@/lib/supabase/client";
 import { useUser } from "@/lib/hooks/useUser";
+import { useToast } from "@/providers/ToastProvider";
 import Link from "next/link";
 
 const BRANDS = [
@@ -49,6 +50,7 @@ interface FormState {
 
 export function RepairForm() {
   const { user, loading: userLoading } = useUser();
+  const { toast } = useToast();
   const searchParams = useSearchParams();
   const [form, setForm] = useState<FormState>({
     marque: "",
@@ -133,6 +135,7 @@ export function RepairForm() {
         return;
       }
       setSubmitted(true);
+      toast("Demande de reparation envoyee !");
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Erreur de connexion";
       setError(message);

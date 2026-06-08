@@ -21,6 +21,7 @@ body {
   --animate-slide-down: slide-down 0.3s ease-out;
   --animate-scale-in: scale-in 0.3s ease-out;
   --animate-glow: glow 2s ease-in-out infinite alternate;
+  --animate-shimmer: shimmer 1.5s infinite;
 
   @keyframes fade-in {
     from {
@@ -72,6 +73,15 @@ body {
     to {
       box-shadow: 0 0 10px rgba(0, 255, 136, 0.4),
         0 0 20px rgba(0, 255, 136, 0.2);
+    }
+  }
+
+  @keyframes shimmer {
+    0% {
+      background-position: -200% 0;
+    }
+    100% {
+      background-position: 200% 0;
     }
   }
 }
@@ -144,4 +154,16 @@ body {
 *:focus-visible {
   outline: 2px solid var(--color-vert-neon);
   outline-offset: 2px;
+}
+
+/* Shimmer skeleton animation */
+.animate-shimmer {
+  background-image: linear-gradient(
+    90deg,
+    var(--color-gris-anthracite-light) 0%,
+    rgba(255, 255, 255, 0.05) 50%,
+    var(--color-gris-anthracite-light) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
 }

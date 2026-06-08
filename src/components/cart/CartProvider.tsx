@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useState, useCallback, useMemo, useEffect, type ReactNode } from "react";
+import { useToast } from "@/providers/ToastProvider";
 
 export interface CartItem {
   id: string;
@@ -47,6 +48,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
+  const { toast } = useToast();
 
   // Load cart from localStorage on mount
   useEffect(() => {
@@ -79,9 +81,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
         }
         return [...prev, { ...newItem, quantity }];
       });
+      toast("Ajoute au panier !");
       setIsOpen(true);
     },
-    []
+    [toast]
   );
 
   const removeItem = useCallback((id: string) => {
