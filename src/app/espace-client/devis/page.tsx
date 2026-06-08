@@ -2,11 +2,17 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { FileText, CreditCard, CheckCircle2 } from "lucide-react";
+import { FileText, CreditCard, CheckCircle2, ChevronDown, ChevronUp } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import type { BadgeVariant } from "@/components/ui/Badge";
 import { createClient } from "@/lib/supabase/client";
 import { useUser } from "@/lib/hooks/useUser";
+
+interface LineItem {
+  description: string;
+  quantity: number;
+  unitPrice: number;
+}
 
 interface ClientQuote {
   id: string;
@@ -16,6 +22,8 @@ interface ClientQuote {
   valid_until: string;
   created_at: string;
   notes: string | null;
+  line_items: LineItem[] | null;
+  labor_cost: number | null;
 }
 
 const statusConfig: Record<string, { label: string; variant: BadgeVariant }> = {
@@ -35,6 +43,109 @@ function formatDate(dateStr: string): string {
   });
 }
 
+function QuoteDetail({ quote }: { quote: ClientQuote }) {
+  const [expanded, setExpanded] = useState(false);
+  const status = statusConfig[quote.status] || statusConfig.sent;
+  const lineItems = quote.line_items || [];
+  const laborCost = quote.labor_cost || 0;
+
+  return (
+    <div className="p-5 bg-gris-anthracite border border-white/5 rounded-2xl">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <div className={`p-3 rounded-xl ${quote.status === "accepted" ? "bg-vert-neon/10" : "bg-purple-500/10"}`}>
+            {quote.status === "accepted" ? (
+              <CheckCircle2 className="h-5 w-5 text-vert-neon" />
+            ) : (
+              <FileText className="h-5 w-5 text-purple-400" />
+            )}
+          </div>
+          <div>
+            <div className="flex items-center gap-3">
+              <p className="text-sm font-medium text-blanc-casse">
+                Devis #{quote.id.slice(0, 8).toUpperCase()}
+              </p>
+              <Badge variant={status.variant}>{status.label}</Badge>
+            </div>
+            {quote.notes && (
+              <p className="text-sm text-blanc-casse/70 mt-1">
+                {quote.notes.substring(0, 80)}
+              </p>
+            )}
+            <p className="text-xs text-blanc-casse/50 mt-0.5">
+              Valide jusqu&apos;au {formatDate(quote.valid_until)}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <p className="text-lg font-bold text-blanc-casse">
+            {quote.total.toFixed(2)} EUR
+          </p>
+          {quote.status === "sent" && quote.payment_url && (
+            <a
+              href={quote.payment_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 rounded-xl bg-vert-neon px-4 py-2.5 text-sm font-semibold text-noir-mat hover:opacity-90 transition-opacity"
+            >
+              <CreditCard className="h-4 w-4" />
+              Payer
+            </a>
+          )}
+        </div>
+      </div>
+
+      {/* Expand/Collapse detail */}
+      {lineItems.length > 0 && (
+        <div className="mt-3">
+          <button
+            onClick={() => setExpanded(!expanded)}
+            className="flex items-center gap-1 text-xs text-blanc-casse/50 hover:text-blanc-casse/70 transition-colors"
+          >
+            {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+            {expanded ? "Masquer le detail" : "Voir le detail"}
+          </button>
+
+          {expanded && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              className="mt-3 pt-3 border-t border-white/5"
+            >
+              <div className="space-y-2">
+                {lineItems.map((item, i) => (
+                  <div key={i} className="flex items-center justify-between text-sm">
+                    <span className="text-blanc-casse/70">
+                      {item.description || "Article"} x{item.quantity}
+                    </span>
+                    <span className="text-blanc-casse/80 font-medium">
+                      {((item.quantity || 1) * (item.unitPrice || 0)).toFixed(2)} EUR
+                    </span>
+                  </div>
+                ))}
+                {laborCost > 0 && (
+                  <div className="flex items-center justify-between text-sm pt-1 border-t border-white/5">
+                    <span className="text-blanc-casse/70">Main d&apos;oeuvre</span>
+                    <span className="text-blanc-casse/80 font-medium">
+                      {laborCost.toFixed(2)} EUR
+                    </span>
+                  </div>
+                )}
+                <div className="flex items-center justify-between text-sm pt-2 border-t border-white/5">
+                  <span className="text-blanc-casse font-semibold">Total</span>
+                  <span className="text-vert-neon font-bold">
+                    {quote.total.toFixed(2)} EUR
+                  </span>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function DevisPage() {
   const { user, loading: userLoading } = useUser();
   const [quotes, setQuotes] = useState<ClientQuote[]>([]);
@@ -46,7 +157,7 @@ export default function DevisPage() {
       const supabase = createClient();
       const { data } = await supabase
         .from("quotes")
-        .select("id, status, total, payment_url, valid_until, created_at, notes")
+        .select("id, status, total, payment_url, valid_until, created_at, notes, line_items, labor_cost")
         .eq("user_id", user.id)
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .order("created_at", { ascending: false }) as any as { data: ClientQuote[] | null };
@@ -96,62 +207,16 @@ export default function DevisPage() {
         </motion.div>
       ) : (
         <div className="space-y-4">
-          {quotes.map((quote, index) => {
-            const status = statusConfig[quote.status] || statusConfig.sent;
-            return (
-              <motion.div
-                key={quote.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: index * 0.05 }}
-                className="p-5 bg-gris-anthracite border border-white/5 rounded-2xl"
-              >
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div className="flex items-center gap-4">
-                    <div className={`p-3 rounded-xl ${quote.status === "accepted" ? "bg-vert-neon/10" : "bg-purple-500/10"}`}>
-                      {quote.status === "accepted" ? (
-                        <CheckCircle2 className="h-5 w-5 text-vert-neon" />
-                      ) : (
-                        <FileText className="h-5 w-5 text-purple-400" />
-                      )}
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-3">
-                        <p className="text-sm font-medium text-blanc-casse">
-                          Devis #{quote.id.slice(0, 8).toUpperCase()}
-                        </p>
-                        <Badge variant={status.variant}>{status.label}</Badge>
-                      </div>
-                      {quote.notes && (
-                        <p className="text-sm text-blanc-casse/70 mt-1">
-                          {quote.notes.substring(0, 80)}
-                        </p>
-                      )}
-                      <p className="text-xs text-blanc-casse/50 mt-0.5">
-                        Valide jusqu&apos;au {formatDate(quote.valid_until)}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <p className="text-lg font-bold text-blanc-casse">
-                      {quote.total.toFixed(2)} EUR
-                    </p>
-                    {quote.status === "sent" && quote.payment_url && (
-                      <a
-                        href={quote.payment_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2 rounded-xl bg-vert-neon px-4 py-2.5 text-sm font-semibold text-noir-mat hover:opacity-90 transition-opacity"
-                      >
-                        <CreditCard className="h-4 w-4" />
-                        Payer
-                      </a>
-                    )}
-                  </div>
-                </div>
-              </motion.div>
-            );
-          })}
+          {quotes.map((quote, index) => (
+            <motion.div
+              key={quote.id}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: index * 0.05 }}
+            >
+              <QuoteDetail quote={quote} />
+            </motion.div>
+          ))}
         </div>
       )}
     </div>

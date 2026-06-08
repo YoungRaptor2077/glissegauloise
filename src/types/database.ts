@@ -199,7 +199,7 @@ export interface Database {
           model: string | null;
           issue_description: string;
           urgency: "normal" | "urgent" | "very_urgent";
-          status: "received" | "diagnostic" | "waiting_parts" | "in_progress" | "testing" | "completed" | "ready_pickup" | "closed";
+          status: "received" | "diagnostic" | "awaiting_decision" | "waiting_parts" | "in_progress" | "testing" | "completed" | "ready_pickup" | "closed";
           contact_preference: "email" | "phone" | "both";
           phone: string | null;
           email: string;
@@ -223,7 +223,7 @@ export interface Database {
           model?: string | null;
           issue_description: string;
           urgency?: "normal" | "urgent" | "very_urgent";
-          status?: "received" | "diagnostic" | "waiting_parts" | "in_progress" | "testing" | "completed" | "ready_pickup" | "closed";
+          status?: "received" | "diagnostic" | "awaiting_decision" | "waiting_parts" | "in_progress" | "testing" | "completed" | "ready_pickup" | "closed";
           contact_preference?: "email" | "phone" | "both";
           phone?: string | null;
           email: string;
@@ -247,7 +247,7 @@ export interface Database {
           model?: string | null;
           issue_description?: string;
           urgency?: "normal" | "urgent" | "very_urgent";
-          status?: "received" | "diagnostic" | "waiting_parts" | "in_progress" | "testing" | "completed" | "ready_pickup" | "closed";
+          status?: "received" | "diagnostic" | "awaiting_decision" | "waiting_parts" | "in_progress" | "testing" | "completed" | "ready_pickup" | "closed";
           contact_preference?: "email" | "phone" | "both";
           phone?: string | null;
           email?: string;
@@ -273,12 +273,12 @@ export interface Database {
           user_id: string;
           repair_id: string | null;
           status: "draft" | "sent" | "accepted" | "rejected" | "expired";
-          items: Json;
+          line_items: Json;
           labor_cost: number;
-          parts_cost: number;
           total: number;
           valid_until: string;
           notes: string | null;
+          payment_url: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -287,12 +287,12 @@ export interface Database {
           user_id: string;
           repair_id?: string | null;
           status?: "draft" | "sent" | "accepted" | "rejected" | "expired";
-          items: Json;
+          line_items: Json;
           labor_cost: number;
-          parts_cost: number;
           total: number;
           valid_until: string;
           notes?: string | null;
+          payment_url?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -301,12 +301,12 @@ export interface Database {
           user_id?: string;
           repair_id?: string | null;
           status?: "draft" | "sent" | "accepted" | "rejected" | "expired";
-          items?: Json;
+          line_items?: Json;
           labor_cost?: number;
-          parts_cost?: number;
           total?: number;
           valid_until?: string;
           notes?: string | null;
+          payment_url?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -459,7 +459,7 @@ export interface Database {
     Enums: {
       user_role: "client" | "admin" | "super_admin";
       order_status: "pending" | "confirmed" | "shipped" | "delivered" | "cancelled";
-      repair_status: "received" | "diagnostic" | "waiting_parts" | "in_progress" | "testing" | "completed" | "ready_pickup" | "closed";
+      repair_status: "received" | "diagnostic" | "awaiting_decision" | "waiting_parts" | "in_progress" | "testing" | "completed" | "ready_pickup" | "closed";
       repair_urgency: "normal" | "urgent" | "very_urgent";
       contact_preference: "email" | "phone" | "both";
       quote_status: "draft" | "sent" | "accepted" | "rejected" | "expired";

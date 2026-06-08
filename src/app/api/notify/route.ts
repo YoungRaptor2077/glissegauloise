@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
 
     // Send email for repair updates (only important statuses)
     if (type === "repair_update" && user_id) {
-      const emailableStatuses = ["waiting_parts", "in_progress", "testing", "completed", "ready_pickup", "closed"];
+      const emailableStatuses = ["awaiting_decision", "waiting_parts", "in_progress", "testing", "completed", "ready_pickup", "closed"];
       const statusKey = body.status_key || "";
       
       if (emailableStatuses.includes(statusKey)) {
