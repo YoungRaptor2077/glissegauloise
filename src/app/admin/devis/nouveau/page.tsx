@@ -11,6 +11,7 @@ interface LineItem {
   quantity: number;
   unitPrice: number;
   note: string;
+  link: string;
 }
 
 interface ClientOption {
@@ -37,7 +38,7 @@ export default function NouveauDevisPage() {
     laborCost: "",
   });
   const [lineItems, setLineItems] = useState<LineItem[]>([
-    { description: "", quantity: 1, unitPrice: 0, note: "" },
+    { description: "", quantity: 1, unitPrice: 0, note: "", link: "" },
   ]);
 
   useEffect(() => {
@@ -64,7 +65,7 @@ export default function NouveauDevisPage() {
   });
 
   const addLineItem = () => {
-    setLineItems([...lineItems, { description: "", quantity: 1, unitPrice: 0, note: "" }]);
+    setLineItems([...lineItems, { description: "", quantity: 1, unitPrice: 0, note: "", link: "" }]);
   };
 
   const removeLineItem = (index: number) => {
@@ -359,6 +360,20 @@ export default function NouveauDevisPage() {
                       >
                         <Trash2 size={14} />
                       </button>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-12 gap-3 items-end">
+                    <div className="col-span-11">
+                      {index === 0 && (
+                        <label className="mb-1.5 block text-xs font-medium text-blanc-casse/60">Lien de la piece (optionnel)</label>
+                      )}
+                      <input
+                        type="url"
+                        value={item.link}
+                        onChange={(e) => updateLineItem(index, "link", e.target.value)}
+                        placeholder="https://www.aliexpress.com/... ou https://www.amazon.fr/..."
+                        className="w-full rounded-xl border border-white/10 bg-gris-anthracite px-3 py-2 text-xs text-blanc-casse placeholder:text-blanc-casse/40 focus:border-vert-neon/50 focus:outline-none"
+                      />
                     </div>
                   </div>
                 </div>

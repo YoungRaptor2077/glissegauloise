@@ -14,6 +14,7 @@ interface LineItem {
   quantity: number;
   unitPrice: number;
   note?: string;
+  link?: string;
 }
 
 interface ClientQuote {
@@ -155,6 +156,16 @@ function QuoteDocument({ quote }: { quote: ClientQuote }) {
                         <p className="sm:hidden text-[11px] text-blanc-casse/40 italic mt-1">
                           {item.note}
                         </p>
+                      )}
+                      {item.link && (
+                        <a
+                          href={item.link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="mt-1 inline-flex items-center gap-1 rounded-md bg-vert-neon/10 px-2 py-0.5 text-[11px] font-medium text-vert-neon hover:bg-vert-neon/20 transition-colors"
+                        >
+                          Voir la piece
+                        </a>
                       )}
                     </td>
                     <td className="py-3 pr-4 hidden sm:table-cell">
