@@ -154,7 +154,7 @@ export default function RootLayout({
               "url": "https://glissegauloisse.com",
               "potentialAction": {
                 "@type": "SearchAction",
-                "target": "https://glissegauloisse.fr/boutique?search={search_term_string}",
+                "target": "https://glissegauloisse.com/boutique?search={search_term_string}",
                 "query-input": "required name=search_term_string"
               }
             })

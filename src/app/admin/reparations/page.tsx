@@ -157,7 +157,6 @@ export default function ReparationsPage() {
         .order("created_at", { ascending: false }) as { data: Repair[] | null };
 
       if (data) {
-        const userIds = [...new Set(data.map((r) => r.user_id).filter(Boolean))] as string[];
         const profileMap: Record<string, Profile> = {};
         const emailProfileMap: Record<string, Profile> = {};
 

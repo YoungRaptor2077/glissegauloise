@@ -2,14 +2,12 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { AuthForm } from "@/components/auth/AuthForm";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { createClient } from "@/lib/supabase/client";
 
 export default function InscriptionPage() {
-  const router = useRouter();
   const [formData, setFormData] = useState({
     email: "",
     password: "",
