@@ -25,8 +25,8 @@ export function Footer() {
               </span>
             </div>
             <p className="text-sm text-blanc-casse/60">
-              Votre specialiste glisse urbaine. Skateboards, longboards,
-              surfskates et reparations professionnelles.
+              Votre specialiste en trottinettes electriques. Reparation,
+              diagnostic et vente de pieces detachees.
             </p>
             <div className="space-y-2">
               <div className="flex items-start gap-2 text-sm text-blanc-casse/60">

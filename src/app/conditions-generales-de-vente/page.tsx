@@ -34,8 +34,8 @@ export default function CGVPage() {
             Article 2 - Produits et services
           </h2>
           <p>
-            GlisseGauloisse propose a la vente des articles de glisse
-            (skateboards, longboards, surfskates), des accessoires et des
+            GlisseGauloisse propose a la vente des trottinettes electriques,
+            des pieces detachees, des accessoires et des
             services de reparation. Les produits sont decrits avec la plus grande
             exactitude possible. Les photographies sont non contractuelles.
           </p>
