@@ -10,6 +10,7 @@ interface LineItem {
   description: string;
   quantity: number;
   unitPrice: number;
+  note: string;
 }
 
 interface ClientOption {
@@ -36,7 +37,7 @@ export default function NouveauDevisPage() {
     laborCost: "",
   });
   const [lineItems, setLineItems] = useState<LineItem[]>([
-    { description: "", quantity: 1, unitPrice: 0 },
+    { description: "", quantity: 1, unitPrice: 0, note: "" },
   ]);
 
   useEffect(() => {
@@ -63,7 +64,7 @@ export default function NouveauDevisPage() {
   });
 
   const addLineItem = () => {
-    setLineItems([...lineItems, { description: "", quantity: 1, unitPrice: 0 }]);
+    setLineItems([...lineItems, { description: "", quantity: 1, unitPrice: 0, note: "" }]);
   };
 
   const removeLineItem = (index: number) => {
@@ -298,53 +299,67 @@ export default function NouveauDevisPage() {
             </div>
             <div className="space-y-3">
               {lineItems.map((item, index) => (
-                <div key={index} className="grid grid-cols-12 gap-3 items-end">
-                  <div className="col-span-6">
-                    {index === 0 && (
-                      <label className="mb-1.5 block text-xs font-medium text-blanc-casse/60">Description</label>
-                    )}
-                    <input
-                      type="text"
-                      value={item.description}
-                      onChange={(e) => updateLineItem(index, "description", e.target.value)}
-                      placeholder="Piece ou service..."
-                      className="w-full rounded-xl border border-white/10 bg-gris-anthracite px-3 py-2 text-sm text-blanc-casse placeholder:text-blanc-casse/40 focus:border-vert-neon/50 focus:outline-none"
-                    />
-                  </div>
-                  <div className="col-span-2">
-                    {index === 0 && (
-                      <label className="mb-1.5 block text-xs font-medium text-blanc-casse/60">Qte</label>
-                    )}
-                    <input
-                      type="number"
-                      min="1"
-                      value={item.quantity}
-                      onChange={(e) => updateLineItem(index, "quantity", parseInt(e.target.value) || 1)}
-                      className="w-full rounded-xl border border-white/10 bg-gris-anthracite px-3 py-2 text-sm text-blanc-casse focus:border-vert-neon/50 focus:outline-none"
-                    />
-                  </div>
-                  <div className="col-span-3">
-                    {index === 0 && (
-                      <label className="mb-1.5 block text-xs font-medium text-blanc-casse/60">Prix unit.</label>
-                    )}
-                    <input
-                      type="number"
-                      step="0.01"
-                      value={item.unitPrice || ""}
-                      onChange={(e) => updateLineItem(index, "unitPrice", parseFloat(e.target.value) || 0)}
-                      placeholder="0.00"
-                      className="w-full rounded-xl border border-white/10 bg-gris-anthracite px-3 py-2 text-sm text-blanc-casse placeholder:text-blanc-casse/40 focus:border-vert-neon/50 focus:outline-none"
-                    />
-                  </div>
-                  <div className="col-span-1">
-                    <button
-                      type="button"
-                      onClick={() => removeLineItem(index)}
-                      disabled={lineItems.length === 1}
-                      className="rounded-lg p-2 text-blanc-casse/40 hover:text-red-400 disabled:opacity-30"
-                    >
-                      <Trash2 size={14} />
-                    </button>
+                <div key={index} className="space-y-2 pb-3 border-b border-white/5 last:border-0">
+                  <div className="grid grid-cols-12 gap-3 items-end">
+                    <div className="col-span-5">
+                      {index === 0 && (
+                        <label className="mb-1.5 block text-xs font-medium text-blanc-casse/60">Description</label>
+                      )}
+                      <input
+                        type="text"
+                        value={item.description}
+                        onChange={(e) => updateLineItem(index, "description", e.target.value)}
+                        placeholder="Piece ou service..."
+                        className="w-full rounded-xl border border-white/10 bg-gris-anthracite px-3 py-2 text-sm text-blanc-casse placeholder:text-blanc-casse/40 focus:border-vert-neon/50 focus:outline-none"
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      {index === 0 && (
+                        <label className="mb-1.5 block text-xs font-medium text-blanc-casse/60">Qte</label>
+                      )}
+                      <input
+                        type="number"
+                        min="1"
+                        value={item.quantity}
+                        onChange={(e) => updateLineItem(index, "quantity", parseInt(e.target.value) || 1)}
+                        className="w-full rounded-xl border border-white/10 bg-gris-anthracite px-3 py-2 text-sm text-blanc-casse focus:border-vert-neon/50 focus:outline-none"
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      {index === 0 && (
+                        <label className="mb-1.5 block text-xs font-medium text-blanc-casse/60">Prix unit.</label>
+                      )}
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={item.unitPrice || ""}
+                        onChange={(e) => updateLineItem(index, "unitPrice", parseFloat(e.target.value) || 0)}
+                        placeholder="0.00"
+                        className="w-full rounded-xl border border-white/10 bg-gris-anthracite px-3 py-2 text-sm text-blanc-casse placeholder:text-blanc-casse/40 focus:border-vert-neon/50 focus:outline-none"
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      {index === 0 && (
+                        <label className="mb-1.5 block text-xs font-medium text-blanc-casse/60">Note</label>
+                      )}
+                      <input
+                        type="text"
+                        value={item.note}
+                        onChange={(e) => updateLineItem(index, "note", e.target.value)}
+                        placeholder="Ex: a la charge du client"
+                        className="w-full rounded-xl border border-white/10 bg-gris-anthracite px-3 py-2 text-xs text-blanc-casse placeholder:text-blanc-casse/40 focus:border-vert-neon/50 focus:outline-none"
+                      />
+                    </div>
+                    <div className="col-span-1">
+                      <button
+                        type="button"
+                        onClick={() => removeLineItem(index)}
+                        disabled={lineItems.length === 1}
+                        className="rounded-lg p-2 text-blanc-casse/40 hover:text-red-400 disabled:opacity-30"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}

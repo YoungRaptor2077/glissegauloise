@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { FileText, CreditCard, CheckCircle2, ChevronDown, ChevronUp } from "lucide-react";
+import { FileText, CreditCard, CheckCircle2 } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import type { BadgeVariant } from "@/components/ui/Badge";
 import { createClient } from "@/lib/supabase/client";
@@ -12,6 +12,7 @@ interface LineItem {
   description: string;
   quantity: number;
   unitPrice: number;
+  note?: string;
 }
 
 interface ClientQuote {
@@ -44,7 +45,6 @@ function formatDate(dateStr: string): string {
 }
 
 function QuoteDetail({ quote }: { quote: ClientQuote }) {
-  const [expanded, setExpanded] = useState(false);
   const status = statusConfig[quote.status] || statusConfig.sent;
   const lineItems = quote.line_items || [];
   const laborCost = quote.labor_cost || 0;
@@ -95,50 +95,42 @@ function QuoteDetail({ quote }: { quote: ClientQuote }) {
         </div>
       </div>
 
-      {/* Expand/Collapse detail */}
+      {/* Detail always visible */}
       {lineItems.length > 0 && (
-        <div className="mt-3">
-          <button
-            onClick={() => setExpanded(!expanded)}
-            className="flex items-center gap-1 text-xs text-blanc-casse/50 hover:text-blanc-casse/70 transition-colors"
-          >
-            {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-            {expanded ? "Masquer le detail" : "Voir le detail"}
-          </button>
-
-          {expanded && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              className="mt-3 pt-3 border-t border-white/5"
-            >
-              <div className="space-y-2">
-                {lineItems.map((item, i) => (
-                  <div key={i} className="flex items-center justify-between text-sm">
-                    <span className="text-blanc-casse/70">
-                      {item.description || "Article"} x{item.quantity}
-                    </span>
-                    <span className="text-blanc-casse/80 font-medium">
-                      {((item.quantity || 1) * (item.unitPrice || 0)).toFixed(2)} EUR
-                    </span>
-                  </div>
-                ))}
-                {laborCost > 0 && (
-                  <div className="flex items-center justify-between text-sm pt-1 border-t border-white/5">
-                    <span className="text-blanc-casse/70">Main d&apos;oeuvre</span>
-                    <span className="text-blanc-casse/80 font-medium">
-                      {laborCost.toFixed(2)} EUR
-                    </span>
-                  </div>
-                )}
-                <div className="flex items-center justify-between text-sm pt-2 border-t border-white/5">
-                  <span className="text-blanc-casse font-semibold">Total</span>
-                  <span className="text-vert-neon font-bold">
-                    {quote.total.toFixed(2)} EUR
+        <div className="mt-3 pt-3 border-t border-white/5">
+          <div className="space-y-2">
+            {lineItems.map((item, i) => (
+              <div key={i} className="flex items-center justify-between text-sm">
+                <div className="flex-1">
+                  <span className="text-blanc-casse/70">
+                    {item.description || "Article"} x{item.quantity}
                   </span>
+                  {item.note && (
+                    <p className="text-[11px] text-blanc-casse/40 italic mt-0.5">{item.note}</p>
+                  )}
                 </div>
+                <span className="text-blanc-casse/80 font-medium">
+                  {((item.quantity || 1) * (item.unitPrice || 0)).toFixed(2)} EUR
+                </span>
               </div>
-            </motion.div>
+            ))}
+            {laborCost > 0 && (
+              <div className="flex items-center justify-between text-sm pt-1 border-t border-white/5">
+                <span className="text-blanc-casse/70">Main d&apos;oeuvre</span>
+                <span className="text-blanc-casse/80 font-medium">
+                  {laborCost.toFixed(2)} EUR
+                </span>
+              </div>
+            )}
+            <div className="flex items-center justify-between text-sm pt-2 border-t border-white/5">
+              <span className="text-blanc-casse font-semibold">Total</span>
+              <span className="text-vert-neon font-bold">
+                {quote.total.toFixed(2)} EUR
+              </span>
+            </div>
+          </div>
+          {quote.notes && (
+            <p className="text-xs text-blanc-casse/50 italic mt-3">{quote.notes}</p>
           )}
         </div>
       )}
