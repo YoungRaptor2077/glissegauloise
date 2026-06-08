@@ -93,6 +93,21 @@ export async function POST(request: NextRequest) {
           const { Resend } = await import("resend");
           const resend = new Resend(process.env.RESEND_API_KEY);
           if (resend) {
+            // Build line items HTML
+            const lineItems = quote.line_items || [];
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const lineItemsHtml = lineItems.map((item: any) =>
+              `<tr>
+                <td style="padding: 8px 0; border-bottom: 1px solid #2a2a2a; color: #f5f5f0;">${item.description || "Article"}</td>
+                <td style="padding: 8px 0; border-bottom: 1px solid #2a2a2a; color: #ccc; text-align: center;">${item.quantity || 1}</td>
+                <td style="padding: 8px 0; border-bottom: 1px solid #2a2a2a; color: #ccc; text-align: right;">${(item.unitPrice || 0).toFixed(2)} EUR</td>
+                <td style="padding: 8px 0; border-bottom: 1px solid #2a2a2a; color: #f5f5f0; text-align: right; font-weight: bold;">${((item.quantity || 1) * (item.unitPrice || 0)).toFixed(2)} EUR</td>
+              </tr>`
+            ).join("");
+
+            const laborCost = quote.labor_cost || 0;
+            const notesText = quote.notes ? `<p style="color: #aaa; font-size: 13px; margin-top: 16px;"><em>Notes : ${quote.notes}</em></p>` : "";
+
             await resend.emails.send({
               from: "GlisseGauloisse <noreply@glissegauloisse.com>",
               to: profile.email,
@@ -101,7 +116,29 @@ export async function POST(request: NextRequest) {
                 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #0a0a0a; color: #f5f5f0; padding: 40px; border-radius: 16px;">
                   <h1 style="color: #00ff88; font-size: 24px; margin-bottom: 20px;">Votre devis est pret</h1>
                   <p>Bonjour ${profile.full_name || ""},</p>
-                  <p>Votre devis d'un montant de <strong>${quote.total?.toFixed(2)} EUR</strong> est disponible.</p>
+                  <p>Voici le detail de votre devis :</p>
+
+                  <table style="width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 14px;">
+                    <thead>
+                      <tr style="border-bottom: 2px solid #333;">
+                        <th style="padding: 8px 0; text-align: left; color: #888;">Description</th>
+                        <th style="padding: 8px 0; text-align: center; color: #888;">Qte</th>
+                        <th style="padding: 8px 0; text-align: right; color: #888;">Prix unit.</th>
+                        <th style="padding: 8px 0; text-align: right; color: #888;">Total</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      ${lineItemsHtml}
+                    </tbody>
+                  </table>
+
+                  <div style="background: #1a1a1a; padding: 16px; border-radius: 8px; margin: 20px 0;">
+                    ${laborCost > 0 ? `<div style="display: flex; justify-content: space-between; margin-bottom: 8px;"><span style="color: #ccc;">Main d'oeuvre</span><span style="color: #f5f5f0;">${laborCost.toFixed(2)} EUR</span></div>` : ""}
+                    <div style="display: flex; justify-content: space-between; padding-top: 8px; border-top: 1px solid #333;"><span style="color: #00ff88; font-weight: bold; font-size: 16px;">TOTAL</span><span style="color: #00ff88; font-weight: bold; font-size: 16px;">${quote.total?.toFixed(2)} EUR</span></div>
+                  </div>
+
+                  ${notesText}
+
                   <p>Vous pouvez regler en ligne en cliquant sur le bouton ci-dessous :</p>
                   <p style="margin: 30px 0;">
                     <a href="${paymentLink.url}" style="display: inline-block; background: #00ff88; color: #0a0a0a; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 16px;">Payer maintenant</a>
