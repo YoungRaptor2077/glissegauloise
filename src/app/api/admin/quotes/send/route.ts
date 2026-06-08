@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const lineItemsHtml = lineItems.map((item: any) =>
               `<tr>
-                <td style="padding: 8px 0; border-bottom: 1px solid #2a2a2a; color: #f5f5f0;">${item.description || "Article"}${item.note ? `<br/><span style="font-size: 11px; color: #aaa; font-style: italic;">${item.note}</span>` : ""}${item.link ? `<br/><a href="${item.link}" target="_blank" rel="noopener noreferrer" style="display: inline-block; margin-top: 4px; padding: 2px 8px; background: rgba(0,255,136,0.1); color: #00ff88; font-size: 11px; border-radius: 4px; text-decoration: none;">Voir la piece</a><div style="margin-top: 6px; padding: 8px 10px; background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 6px; font-size: 11px; color: #aaa; line-height: 1.6;"><strong style="color: #ccc;">Lors de votre commande, vous avez 2 options :</strong><br/>1. <span style="color: #ccc;">Livraison chez vous</span> - Vous recevez la piece et vous nous la ramenez a l'atelier<br/>2. <span style="color: #ccc;">Livraison directe a l'atelier</span> - Faites livrer au nom de GlisseGauloisse, 49 Route de Margency, 95600 Eaubonne</div>` : ""}</td>
+                <td style="padding: 8px 0; border-bottom: 1px solid #2a2a2a; color: #f5f5f0;">${item.description || "Article"}${item.note ? `<br/><span style="font-size: 11px; color: #aaa; font-style: italic;">${item.note}</span>` : ""}${item.link ? `<br/><a href="${item.link}" target="_blank" rel="noopener noreferrer" style="display: inline-block; margin-top: 4px; padding: 2px 8px; background: rgba(0,255,136,0.1); color: #00ff88; font-size: 12px; border-radius: 4px; text-decoration: none;">Voir la piece</a><div style="margin-top: 6px; padding: 10px 12px; background: #1a1a1a; border-left: 3px solid #00ff88; border-radius: 6px; font-size: 13px; color: #ccc; line-height: 1.7;"><strong style="color: #f5f5f0; font-size: 13px;">Lors de votre commande, vous avez 2 options :</strong><br/>1. <span style="color: #f5f5f0;">Livraison chez vous</span> - Vous recevez la piece et vous nous la ramenez a l'atelier<br/>2. <span style="color: #f5f5f0;">Livraison directe a l'atelier</span> - Faites livrer au nom de GlisseGauloisse, 49 Route de Margency, 95600 Eaubonne</div>` : ""}</td>
                 <td style="padding: 8px 0; border-bottom: 1px solid #2a2a2a; color: #ccc; text-align: center;">${item.quantity || 1}</td>
                 <td style="padding: 8px 0; border-bottom: 1px solid #2a2a2a; color: #ccc; text-align: right;">${(item.unitPrice || 0).toFixed(2)} EUR</td>
                 <td style="padding: 8px 0; border-bottom: 1px solid #2a2a2a; color: #f5f5f0; text-align: right; font-weight: bold;">${((item.quantity || 1) * (item.unitPrice || 0)).toFixed(2)} EUR</td>
@@ -116,7 +116,17 @@ export async function POST(request: NextRequest) {
                 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #0a0a0a; color: #f5f5f0; padding: 40px; border-radius: 16px;">
                   <h1 style="color: #00ff88; font-size: 24px; margin-bottom: 20px;">Votre devis est pret</h1>
                   <p>Bonjour ${profile.full_name || ""},</p>
-                  <p>Voici le detail de votre devis :</p>
+                  <p>Votre devis de <strong style="color: #00ff88;">${quote.total?.toFixed(2)} EUR</strong> est pret. Vous pouvez le regler en ligne :</p>
+
+                  <p style="margin: 24px 0; text-align: center;">
+                    <a href="${paymentLink.url}" style="display: inline-block; background: #00ff88; color: #0a0a0a; padding: 16px 32px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 18px;">Payer maintenant</a>
+                  </p>
+
+                  <p style="color: #888; font-size: 13px; text-align: center; margin-bottom: 30px;">Paiement securise par Stripe. Possibilite de payer en 3 fois.</p>
+
+                  <hr style="border: none; border-top: 1px solid #2a2a2a; margin: 20px 0;" />
+
+                  <p style="color: #aaa; font-size: 14px;">Voici le detail de votre devis :</p>
 
                   <table style="width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 14px;">
                     <thead>
@@ -139,8 +149,8 @@ export async function POST(request: NextRequest) {
 
                   ${notesText}
 
-                  <p>Vous pouvez regler en ligne en cliquant sur le bouton ci-dessous :</p>
-                  <p style="margin: 30px 0;">
+                  <p style="margin-top: 24px;">Vous pouvez regler en ligne en cliquant sur le bouton ci-dessous :</p>
+                  <p style="margin: 30px 0; text-align: center;">
                     <a href="${paymentLink.url}" style="display: inline-block; background: #00ff88; color: #0a0a0a; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 16px;">Payer maintenant</a>
                   </p>
                   <p style="color: #888; font-size: 13px;">Paiement securise par Stripe. Possibilite de payer en 3 fois.</p>

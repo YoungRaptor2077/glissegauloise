@@ -158,19 +158,19 @@ function QuoteDocument({ quote }: { quote: ClientQuote }) {
                         </p>
                       )}
                       {item.link && (
-                        <div className="mt-1 space-y-1.5">
+                        <div className="mt-2 space-y-2">
                           <a
                             href={item.link}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 rounded-md bg-vert-neon/10 px-2 py-0.5 text-[11px] font-medium text-vert-neon hover:bg-vert-neon/20 transition-colors"
+                            className="inline-flex items-center gap-1 rounded-md bg-vert-neon/10 px-2.5 py-1 text-xs font-medium text-vert-neon hover:bg-vert-neon/20 transition-colors"
                           >
                             Voir la piece
                           </a>
-                          <div className="rounded-md bg-white/[0.03] border border-white/[0.06] px-2.5 py-2 text-[11px] text-blanc-casse/50 leading-relaxed">
-                            <p className="font-medium text-blanc-casse/60 mb-1">Lors de votre commande, vous avez 2 options :</p>
-                            <p>1. <span className="text-blanc-casse/60">Livraison chez vous</span> - Vous recevez la piece et vous nous la ramenez a l&apos;atelier</p>
-                            <p>2. <span className="text-blanc-casse/60">Livraison directe a l&apos;atelier</span> - Faites livrer au nom de GlisseGauloisse, 49 Route de Margency, 95600 Eaubonne</p>
+                          <div className="rounded-lg bg-white/[0.03] border border-white/[0.06] border-l-2 border-l-vert-neon/40 px-3 py-2.5 text-sm text-blanc-casse/70 leading-relaxed">
+                            <p className="font-semibold text-blanc-casse/80 mb-1.5 text-sm">Lors de votre commande, vous avez 2 options :</p>
+                            <p>1. <span className="text-blanc-casse/80">Livraison chez vous</span> - Vous recevez la piece et vous nous la ramenez a l&apos;atelier</p>
+                            <p>2. <span className="text-blanc-casse/80">Livraison directe a l&apos;atelier</span> - Faites livrer au nom de GlisseGauloisse, 49 Route de Margency, 95600 Eaubonne</p>
                           </div>
                         </div>
                       )}
