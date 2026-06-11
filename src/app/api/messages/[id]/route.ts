@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { createServiceClient } from "@/lib/supabase/service";
+import { sendPushNotification } from "@/lib/push";
 
 async function getAuthUser() {
   const cookieStore = await cookies();
@@ -192,6 +193,13 @@ export async function POST(
           `,
         });
       }
+
+      // Send push notification to admin devices
+      sendPushNotification(
+        `Message de ${clientName}`,
+        body.content.substring(0, 100),
+        `/admin/conversations/${id}`
+      ).catch(() => {});
     } catch {
       // Email notification to admin failed, non-blocking
     }

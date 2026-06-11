@@ -3,6 +3,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { createServerClient } from "@supabase/ssr";
 import { sendRepairReceivedEmail } from "@/lib/email";
 import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
+import { sendPushNotification } from "@/lib/push";
 import type { Database } from "@/types/database";
 
 type RepairInsert = Database["public"]["Tables"]["repairs"]["Insert"];
@@ -133,6 +134,13 @@ export async function POST(request: NextRequest) {
         // Non-critical, don't fail
       }
     }
+
+    // Send push notification to admin devices
+    sendPushNotification(
+      "Nouvelle demande de reparation",
+      `${body.marque}${body.modele ? " " + body.modele : ""} - ${body.description.substring(0, 80)}`,
+      "/admin/reparations"
+    ).catch(() => {});
 
     return NextResponse.json({ success: true, repairId: repair?.id });
   } catch (error: unknown) {

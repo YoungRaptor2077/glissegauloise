@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { NotificationBell } from "@/components/admin/NotificationBell";
+import { PushNotificationBanner } from "@/components/admin/PushNotificationBanner";
 import { User } from "lucide-react";
 
 export default function AdminLayout({
@@ -81,7 +82,10 @@ export default function AdminLayout({
         </header>
 
         {/* Content */}
-        <main className="flex-1 overflow-y-auto p-6">{children}</main>
+        <main className="flex-1 overflow-y-auto p-6">
+          <PushNotificationBanner />
+          {children}
+        </main>
       </div>
     </div>
   );
