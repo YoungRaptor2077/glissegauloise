@@ -1,0 +1,36 @@
+{
+  "id": "FEAT-001",
+  "type": "fix",
+  "description": "Fix chat scroll jumping every 5s by replacing polling with Supabase Realtime in client chat, and implement photo upload with attachment display in messages",
+  "status": "in_progress",
+  "steps": [
+    "1. In src/app/espace-client/messages/[id]/page.tsx: Remove the polling useEffect (the setInterval 5000 block). Replace it with a Realtime subscription using subscribeToMessages and unsubscribeChannel from @/lib/supabase/realtime (same pattern as admin chat at src/app/admin/conversations/[id]/page.tsx lines 98-120). The callback should add new messages using setMessages with duplicate check (prev.some(m => m.id === newMsg.id)).",
+    "2. In src/app/espace-client/messages/[id]/page.tsx: Fix the scrollToBottom useEffect. Instead of triggering on [messages, scrollToBottom], use a useRef to track previous message count. Only scroll to bottom on initial load (when messages first arrive) and when a new message is appended (messages.length > prevCount). Do NOT scroll when messages are unchanged or re-fetched identically.",
+    "3. In src/app/espace-client/messages/[id]/page.tsx: Update the MessageItem interface to include 'attachments?: string[]'. Pass msg.attachments to ChatBubble.",
+    "4. In src/components/messages/ChatInput.tsx: Add photo upload functionality to the Paperclip button. Add a hidden <input type='file' accept='image/*' /> triggered by the Paperclip button click. When a file is selected, show a preview (thumbnail) above the input area. Add state for the selected file and its preview URL. Modify the onSend prop to accept an optional second parameter: onSend(message: string, attachments?: string[]). On send, if a file is selected, upload it to /api/upload-chat-image first to get the URL, then call onSend with the attachment URL array. Clear the preview after send.",
+    "5. Create a new API route src/app/api/upload-chat-image/route.ts: Accept a multipart/form-data POST with an image file. Use createServiceClient() to upload to Supabase Storage bucket 'chat-attachments'. Create the bucket if it doesn't exist (public bucket). Return the public URL of the uploaded file. Validate file type (image/*) and size (max 5MB).",
+    "6. In src/components/messages/ChatBubble.tsx: Add an optional 'attachments' prop (string[]). If attachments has URLs, render them as clickable images below the message content. Images should be displayed with max-width, rounded corners, and open in a new tab or a lightbox on click.",
+    "7. In src/app/api/messages/[id]/route.ts POST handler: Accept 'attachments' from the request body (default to []). Pass body.attachments || [] to the insert instead of hardcoded [].",
+    "8. In src/app/api/admin/conversations/[id]/route.ts POST handler: Accept 'attachments' from the request body (default to []). Pass body.attachments || [] to the insert instead of hardcoded [].",
+    "9. In src/app/espace-client/messages/[id]/page.tsx: Update the handleSend function to accept a second parameter (attachments?: string[]). Pass attachments to the POST body. Also update the ChatInput usage to pass the new onSend signature.",
+    "10. In src/app/admin/reparations/page.tsx: Modify handleStatusChange to use fetch('/api/admin/repairs/${repairId}', { method: 'PATCH', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ status: newStatus, status_history: newHistory }) }) instead of direct Supabase client call.",
+    "11. In src/app/api/admin/repairs/[id]/route.ts PATCH handler: Update to also accept and store 'status_history' from the body. Change the update call from .update({ status: body.status }) to .update({ status: body.status, ...(body.status_history ? { status_history: body.status_history } : {}) }).",
+    "12. Verify build passes with: PATH=\"/root/.nvm/versions/node/v22.22.3/bin:$PATH\" pnpm build"
+  ],
+  "acceptance_criteria": [
+    "Client chat page no longer uses setInterval polling - uses Supabase Realtime instead",
+    "scrollToBottom only fires on initial load and when new messages are added, not on every re-render",
+    "Paperclip button in ChatInput triggers file selection and shows preview",
+    "Images can be uploaded via /api/upload-chat-image and stored in Supabase Storage",
+    "ChatBubble displays image attachments when present",
+    "Message APIs accept and store attachments array",
+    "Admin repairs handleStatusChange uses fetch to PATCH API instead of direct Supabase call",
+    "PATCH /api/admin/repairs/[id] accepts and stores status_history",
+    "pnpm build passes without errors"
+  ],
+  "verification": [
+    "Run PATH=\"/root/.nvm/versions/node/v22.22.3/bin:$PATH\" pnpm build and confirm exit code 0"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

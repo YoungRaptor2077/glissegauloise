@@ -115,7 +115,7 @@ export async function PATCH(
 
     const { error } = await supabase
       .from("repairs")
-      .update({ status: body.status })
+      .update({ status: body.status, ...(body.status_history ? { status_history: body.status_history } : {}) })
       .eq("id", id);
 
     if (error) {

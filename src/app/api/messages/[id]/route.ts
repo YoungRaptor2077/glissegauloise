@@ -139,7 +139,7 @@ export async function POST(
         sender_id: user.id,
         content: body.content,
         is_admin: false,
-        attachments: [],
+        attachments: body.attachments || [],
         is_read: false,
       })
       .select()

@@ -217,43 +217,30 @@ export default function ReparationsPage() {
 
   const handleStatusChange = async (repairId: string, newStatus: string) => {
     setError(null);
-    const supabase = createClient();
 
     // Get current status_history
     const repair = repairs.find((r) => r.rawId === repairId);
     const currentHistory = repair?.statusHistory || [];
     const newHistory = [...currentHistory, { status: newStatus, date: new Date().toISOString() }];
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase.from("repairs") as any)
-      .update({ status: newStatus, status_history: newHistory })
-      .eq("id", repairId);
+    try {
+      const res = await fetch(`/api/admin/repairs/${repairId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus, status_history: newHistory }),
+      });
 
-    if (!error) {
-      setRepairs((prev) =>
-        prev.map((r) => (r.rawId === repairId ? { ...r, status: newStatus, statusHistory: newHistory } : r))
-      );
-      if (selectedRepair?.rawId === repairId) {
-        setSelectedRepair((prev) => prev ? { ...prev, status: newStatus, statusHistory: newHistory } : null);
+      if (res.ok) {
+        setRepairs((prev) =>
+          prev.map((r) => (r.rawId === repairId ? { ...r, status: newStatus, statusHistory: newHistory } : r))
+        );
+        if (selectedRepair?.rawId === repairId) {
+          setSelectedRepair((prev) => prev ? { ...prev, status: newStatus, statusHistory: newHistory } : null);
+        }
+      } else {
+        setError("Erreur lors de la mise a jour du statut de la reparation.");
       }
-
-      // Send notification to client
-      const repair = repairs.find((r) => r.rawId === repairId);
-      if (repair?.userId) {
-        fetch("/api/notify", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            user_id: repair.userId,
-            title: "Reparation mise a jour",
-            message: `Votre reparation est maintenant : ${statusLabels[newStatus] || newStatus}`,
-            type: "repair_update",
-            status_key: newStatus,
-            link: "/espace-client/reparations",
-          }),
-        });
-      }
-    } else {
+    } catch {
       setError("Erreur lors de la mise a jour du statut de la reparation.");
     }
   };

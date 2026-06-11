@@ -9,6 +9,7 @@ interface ChatBubbleProps {
   isSent: boolean;
   senderName?: string;
   isRead?: boolean;
+  attachments?: string[];
 }
 
 export function ChatBubble({
@@ -17,6 +18,7 @@ export function ChatBubble({
   isSent,
   senderName,
   isRead = false,
+  attachments,
 }: ChatBubbleProps) {
   return (
     <div
@@ -33,7 +35,29 @@ export function ChatBubble({
         {senderName && !isSent && (
           <p className="text-xs font-medium text-vert-neon mb-1">{senderName}</p>
         )}
-        <p className="text-sm text-blanc-casse whitespace-pre-wrap">{content}</p>
+        {content && (
+          <p className="text-sm text-blanc-casse whitespace-pre-wrap">{content}</p>
+        )}
+        {attachments && attachments.length > 0 && (
+          <div className={cn("space-y-2", content ? "mt-2" : "")}>
+            {attachments.map((url, index) => (
+              <a
+                key={index}
+                href={url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block overflow-hidden rounded-lg border border-white/10 hover:border-vert-neon/40 transition-colors"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={url}
+                  alt={`Piece jointe ${index + 1}`}
+                  className="max-w-full max-h-64 rounded-lg object-cover"
+                />
+              </a>
+            ))}
+          </div>
+        )}
         <div
           className={cn(
             "flex items-center gap-1 mt-1",

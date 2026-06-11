@@ -9,6 +9,8 @@ import { ChatBubble } from "@/components/messages/ChatBubble";
 import { ChatInput } from "@/components/messages/ChatInput";
 import { Badge } from "@/components/ui/Badge";
 import { useToast } from "@/providers/ToastProvider";
+import { subscribeToMessages, unsubscribeChannel } from "@/lib/supabase/realtime";
+import type { RealtimeMessage } from "@/lib/supabase/realtime";
 
 interface MessageItem {
   id: string;
@@ -17,6 +19,7 @@ interface MessageItem {
   is_admin: boolean;
   is_read: boolean;
   created_at: string;
+  attachments?: string[];
 }
 
 interface ConversationInfo {
@@ -48,13 +51,25 @@ export default function ConversationDetailPage() {
   const [unauthorized, setUnauthorized] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const prevMessageCountRef = useRef<number>(0);
+  const initialLoadRef = useRef<boolean>(true);
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, []);
 
+  // Only scroll on initial load or when new messages are added
   useEffect(() => {
-    scrollToBottom();
+    if (initialLoadRef.current && messages.length > 0) {
+      // Initial load: scroll immediately
+      initialLoadRef.current = false;
+      prevMessageCountRef.current = messages.length;
+      scrollToBottom();
+    } else if (messages.length > prevMessageCountRef.current) {
+      // New message added
+      prevMessageCountRef.current = messages.length;
+      scrollToBottom();
+    }
   }, [messages, scrollToBottom]);
 
   // Fetch conversation and messages
@@ -99,30 +114,27 @@ export default function ConversationDetailPage() {
     fetchData();
   }, [conversationId]);
 
-  // Poll for new messages every 5 seconds
+  // Subscribe to realtime messages (replaces polling)
   useEffect(() => {
-    if (!conversationId || !conversation) return;
+    if (!conversationId) return;
 
-    const interval = setInterval(async () => {
-      try {
-        const res = await fetch(`/api/messages/${conversationId}`);
-        if (res.ok) {
-          const data = await res.json();
-          setMessages(data.messages || []);
-          if (data.conversation) {
-            setConversation(data.conversation);
-          }
-        }
-      } catch (err) {
-        console.error("Polling error:", err);
-      }
-    }, 5000);
+    const channel = subscribeToMessages(conversationId, (newMsg: RealtimeMessage) => {
+      setMessages((prev) => {
+        // Avoid duplicates
+        if (prev.some((m) => m.id === newMsg.id)) return prev;
+        // The realtime payload contains all columns including is_admin
+        const message = newMsg as unknown as MessageItem;
+        return [...prev, message];
+      });
+    });
 
-    return () => clearInterval(interval);
-  }, [conversationId, conversation]);
+    return () => {
+      unsubscribeChannel(channel);
+    };
+  }, [conversationId]);
 
   const handleSend = useCallback(
-    async (content: string) => {
+    async (content: string, attachments?: string[]) => {
       if (!conversationId) return;
       setError(null);
 
@@ -130,7 +142,7 @@ export default function ConversationDetailPage() {
         const res = await fetch(`/api/messages/${conversationId}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ content }),
+          body: JSON.stringify({ content, attachments: attachments || [] }),
         });
 
         if (res.ok) {
@@ -232,6 +244,7 @@ export default function ConversationDetailPage() {
             isSent={!msg.is_admin}
             senderName={msg.is_admin ? "GlisseGauloise" : undefined}
             isRead={msg.is_read}
+            attachments={msg.attachments}
           />
         ))}
         <div ref={messagesEndRef} />

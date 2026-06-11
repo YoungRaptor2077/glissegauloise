@@ -1,0 +1,28 @@
+{
+  "project_type": "Next.js 15 app with React 19, Supabase, Stripe",
+  "language": "TypeScript",
+  "build_system": "pnpm with Next.js build",
+  "test_framework": "No test framework configured",
+  "build_command": "PATH=\"/root/.nvm/versions/node/v22.22.3/bin:$PATH\" pnpm build",
+  "test_command": null,
+  "verification_instructions": "Run pnpm build and confirm it passes without errors",
+  "snapshot_or_generated_files": null,
+  "setup_instructions": "PATH=\"/root/.nvm/versions/node/v22.22.3/bin:$PATH\" - pnpm is already installed, node_modules exist",
+  "environment_constraints": "No test framework. Verification is build-only. Supabase environment variables are set for build but no actual DB connection in CI.",
+  "contribution_requirements": "Push directly to main branch",
+  "key_patterns": "Supabase Realtime subscriptions via src/lib/supabase/realtime.ts (subscribeToMessages, unsubscribeChannel). Client supabase from src/lib/supabase/client.ts. Service client from src/lib/supabase/service.ts. API routes use createServiceClient for DB operations. ChatBubble and ChatInput are shared components. Admin chat already uses Realtime (see src/app/admin/conversations/[id]/page.tsx lines 98-120). eslint-disable comments used for 'any' type assertions on supabase queries.",
+  "relevant_files": [
+    "src/app/espace-client/messages/[id]/page.tsx",
+    "src/app/admin/conversations/[id]/page.tsx",
+    "src/components/messages/ChatInput.tsx",
+    "src/components/messages/ChatBubble.tsx",
+    "src/lib/supabase/realtime.ts",
+    "src/lib/supabase/client.ts",
+    "src/lib/supabase/service.ts",
+    "src/app/api/messages/[id]/route.ts",
+    "src/app/api/admin/conversations/[id]/route.ts",
+    "src/app/api/admin/repairs/[id]/route.ts",
+    "src/app/admin/reparations/page.tsx"
+  ],
+  "directory_structure": "src/app/ - Next.js app router pages and API routes. src/components/ - shared components. src/lib/ - utilities and supabase clients. src/types/ - TypeScript types."
+}
