@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Bell, X } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 
 export function PushNotificationBanner() {
   const [show, setShow] = useState(false);
@@ -30,10 +31,13 @@ export function PushNotificationBanner() {
 
       // Subscription exists locally, resync it with the server
       try {
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+
         const res = await fetch("/api/push/subscribe", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ subscription: subscription.toJSON() }),
+          body: JSON.stringify({ subscription: subscription.toJSON(), userId: user?.id || null }),
         });
 
         if (!res.ok) {
@@ -96,11 +100,15 @@ export function PushNotificationBanner() {
         applicationServerKey: urlBase64ToUint8Array(vapidKey) as BufferSource,
       });
 
+      // Get user for reliable user_id association
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+
       // Save subscription to server
       const res = await fetch("/api/push/subscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ subscription: subscription.toJSON() }),
+        body: JSON.stringify({ subscription: subscription.toJSON(), userId: user?.id || null }),
       });
 
       if (res.ok) {

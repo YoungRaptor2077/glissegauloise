@@ -11,33 +11,36 @@ export async function POST(request: NextRequest) {
     const adminCookie = request.cookies.get("admin_session");
     if (adminCookie && adminCookie.value === "authenticated") {
       isAuthorized = true;
-      // Try to get user ID from Supabase auth if available
-      try {
-        const supabase = await createClient();
-        const { data: { user } } = await supabase.auth.getUser();
-        userId = user?.id || null;
-      } catch {
-        // No user session, that's fine for admin
-      }
     }
 
     // Check 2: Supabase authenticated user (client or admin)
     if (!isAuthorized) {
-      const supabase = await createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        isAuthorized = true;
-        userId = user.id;
+      try {
+        const supabase = await createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          isAuthorized = true;
+          userId = user.id;
+        }
+      } catch {
+        // Auth check failed
       }
     }
 
-    // Not authenticated at all
+    // Parse body early to check for userId
+    const body = await request.json();
+    const { subscription, userId: bodyUserId } = body;
+
+    // If userId provided in body, use it (client-side knows the user)
+    if (bodyUserId) {
+      userId = bodyUserId;
+      isAuthorized = true; // If they have a userId, they're authenticated client-side
+    }
+
+    // If still not authorized, also try server auth one more time for admin
     if (!isAuthorized) {
       return NextResponse.json({ error: "Non autorise" }, { status: 401 });
     }
-
-    const body = await request.json();
-    const { subscription } = body;
 
     if (!subscription || !subscription.endpoint) {
       return NextResponse.json({ error: "Subscription invalide" }, { status: 400 });
