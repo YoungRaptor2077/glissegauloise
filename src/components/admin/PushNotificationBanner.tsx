@@ -60,6 +60,9 @@ export function PushNotificationBanner() {
 
       if (res.ok) {
         setShow(false);
+      } else {
+        const errorData = await res.json();
+        console.error("Push subscribe failed:", errorData);
       }
     } catch (error) {
       console.error("Push subscription error:", error);

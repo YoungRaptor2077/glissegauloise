@@ -20,18 +20,29 @@ export async function POST(request: NextRequest) {
       }
     );
 
-    const {
-      data: { user },
-    } = await supabaseAuth.auth.getUser();
+    // Check admin authentication - support both methods
+    const adminCookie = request.cookies.get("admin_session");
+    let userId: string | null = null;
 
-    if (!user) {
-      return NextResponse.json({ error: "Non authentifie" }, { status: 401 });
-    }
-
-    // Verify user is admin
-    const adminEmails = ["gdrmathis15@gmail.com", "vanderieviere76@gmail.com"];
-    if (!adminEmails.includes(user.email || "")) {
-      return NextResponse.json({ error: "Non autorise" }, { status: 403 });
+    if (adminCookie?.value === "authenticated") {
+      // Admin logged in via password - get user from Supabase Auth if available
+      try {
+        const { data: { user } } = await supabaseAuth.auth.getUser();
+        userId = user?.id || null;
+      } catch {
+        // No Supabase user, but admin cookie is valid
+      }
+    } else {
+      // Try Supabase Auth
+      const { data: { user } } = await supabaseAuth.auth.getUser();
+      if (!user) {
+        return NextResponse.json({ error: "Non authentifie" }, { status: 401 });
+      }
+      const adminEmails = ["gdrmathis15@gmail.com", "vanderieviere76@gmail.com"];
+      if (!adminEmails.includes(user.email || "")) {
+        return NextResponse.json({ error: "Non autorise" }, { status: 403 });
+      }
+      userId = user.id;
     }
 
     const body = await request.json();
@@ -49,7 +60,7 @@ export async function POST(request: NextRequest) {
     // Upsert subscription (replace if same endpoint exists)
     const { error } = await supabase.from("push_subscriptions").upsert(
       {
-        user_id: user.id,
+        user_id: userId || "admin",
         subscription: subscription,
         endpoint: subscription.endpoint,
       },
