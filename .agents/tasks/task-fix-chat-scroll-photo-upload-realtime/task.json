@@ -1,7 +1,14 @@
 {
   "task_id": "task-fix-chat-scroll-photo-upload-realtime",
   "task_description": "Fix client chat scroll jumping every 5 seconds by replacing polling with Supabase Realtime, implement photo upload in messages via Paperclip button with Supabase Storage, and fix admin repairs handleStatusChange to use PATCH API",
-  "status": "in_progress",
+  "status": "completed",
   "feature_order": ["FEAT-001"],
-  "blocked_reason": null
+  "blocked_reason": null,
+  "verification": {
+    "build": "pass",
+    "tests": "skipped",
+    "test_quality": "skipped",
+    "docker_build": "skipped",
+    "summary": "pnpm build passes (exit code 0). No test framework configured. All 3 fixes verified in code: polling replaced with realtime, photo upload fully implemented, admin status change uses PATCH API."
+  }
 }
