@@ -13,18 +13,37 @@ export function PushNotificationBanner() {
       return;
     }
 
-    // Check if already subscribed
-    navigator.serviceWorker.ready.then((registration) => {
-      registration.pushManager.getSubscription().then((subscription) => {
-        if (!subscription) {
-          setShow(true);
-        }
-      });
-    });
-
     // Register service worker
     navigator.serviceWorker.register("/sw.js").catch(() => {
       // SW registration failed
+    });
+
+    // Check if already subscribed and resync with server
+    navigator.serviceWorker.ready.then(async (registration) => {
+      const subscription = await registration.pushManager.getSubscription();
+      if (!subscription) {
+        // No local subscription, show banner to subscribe
+        setShow(true);
+        return;
+      }
+
+      // Subscription exists locally, resync it with the server
+      try {
+        const res = await fetch("/api/push/subscribe", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ subscription: subscription.toJSON() }),
+        });
+
+        if (!res.ok) {
+          // Server sync failed, show banner so admin can retry
+          setShow(true);
+        }
+        // If sync succeeded, don't show banner (everything is OK)
+      } catch {
+        // Network or other error, show banner to allow retry
+        setShow(true);
+      }
     });
   }, []);
 
