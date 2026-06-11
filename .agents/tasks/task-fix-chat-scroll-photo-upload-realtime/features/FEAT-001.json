@@ -2,7 +2,7 @@
   "id": "FEAT-001",
   "type": "fix",
   "description": "Fix chat scroll jumping every 5s by replacing polling with Supabase Realtime in client chat, and implement photo upload with attachment display in messages",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "1. In src/app/espace-client/messages/[id]/page.tsx: Remove the polling useEffect (the setInterval 5000 block). Replace it with a Realtime subscription using subscribeToMessages and unsubscribeChannel from @/lib/supabase/realtime (same pattern as admin chat at src/app/admin/conversations/[id]/page.tsx lines 98-120). The callback should add new messages using setMessages with duplicate check (prev.some(m => m.id === newMsg.id)).",
     "2. In src/app/espace-client/messages/[id]/page.tsx: Fix the scrollToBottom useEffect. Instead of triggering on [messages, scrollToBottom], use a useRef to track previous message count. Only scroll to bottom on initial load (when messages first arrive) and when a new message is appended (messages.length > prevCount). Do NOT scroll when messages are unchanged or re-fetched identically.",
@@ -32,5 +32,5 @@
     "Run PATH=\"/root/.nvm/versions/node/v22.22.3/bin:$PATH\" pnpm build and confirm exit code 0"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "RealtimeMessage type from realtime.ts lacks is_admin field - needed to cast via `as unknown as MessageItem` since the actual Postgres INSERT payload includes all columns. Build passes cleanly with only pre-existing img element warnings."
 }
