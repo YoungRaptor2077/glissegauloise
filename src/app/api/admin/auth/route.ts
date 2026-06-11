@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
 import { verifyCsrf } from "@/lib/csrf";
@@ -79,39 +80,13 @@ export async function GET(request: NextRequest) {
 
   // Verify the Supabase user is actually an admin
   try {
-    // Find the Supabase auth token from cookies
-    const allCookies = request.cookies.getAll();
-    const authCookie = allCookies.find((c) => c.name.startsWith("sb-") && c.name.endsWith("-auth-token"));
-    const authHeader = request.headers.get("authorization");
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
 
-    let token: string | null = null;
-
-    if (authCookie) {
-      // The cookie value may be base64-encoded JSON with access_token
-      try {
-        const parsed = JSON.parse(decodeURIComponent(authCookie.value));
-        token = parsed.access_token || parsed[0]?.access_token || null;
-      } catch {
-        token = authCookie.value;
-      }
-    } else if (authHeader?.startsWith("Bearer ")) {
-      token = authHeader.slice(7);
-    }
-
-    if (!token) {
-      // No auth token found - cannot verify user, invalidate admin session
-      const response = NextResponse.json({ authenticated: false });
-      response.cookies.set("admin_session", "", { path: "/", httpOnly: true, sameSite: "lax", maxAge: 0 });
-      return response;
-    }
-
-    const serviceClient = createServiceClient();
-    const { data: { user }, error } = await serviceClient.auth.getUser(token);
-
-    if (error || !user || !user.email) {
-      const response = NextResponse.json({ authenticated: false });
-      response.cookies.set("admin_session", "", { path: "/", httpOnly: true, sameSite: "lax", maxAge: 0 });
-      return response;
+    if (!user || !user.email) {
+      // No Supabase session active - admin may have logged in via password only
+      // Keep the cookie valid
+      return NextResponse.json({ authenticated: true });
     }
 
     // Check if email is in the admin list
@@ -120,6 +95,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Check if user has admin/super_admin role in profiles table
+    const serviceClient = createServiceClient();
     const { data: profile } = await serviceClient
       .from("profiles")
       .select("role")
@@ -131,14 +107,12 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ authenticated: true });
     }
 
-    // User is not an admin - delete the cookie
+    // User is authenticated via Supabase but is not an admin - delete the cookie
     const response = NextResponse.json({ authenticated: false });
     response.cookies.set("admin_session", "", { path: "/", httpOnly: true, sameSite: "lax", maxAge: 0 });
     return response;
   } catch {
-    // On error, fail closed - invalidate the session
-    const response = NextResponse.json({ authenticated: false });
-    response.cookies.set("admin_session", "", { path: "/", httpOnly: true, sameSite: "lax", maxAge: 0 });
-    return response;
+    // On error, keep the session valid (admin may have logged in via password)
+    return NextResponse.json({ authenticated: true });
   }
 }
