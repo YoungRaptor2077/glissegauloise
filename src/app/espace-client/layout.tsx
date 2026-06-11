@@ -38,6 +38,7 @@ export default function EspaceClientLayout({
 
   async function handleLogout() {
     const supabase = createClient();
+    await fetch("/api/admin/auth/logout", { method: "POST" });
     await supabase.auth.signOut();
     window.location.href = "/";
   }

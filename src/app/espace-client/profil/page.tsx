@@ -80,6 +80,7 @@ export default function ProfilPage() {
 
   const handleLogout = async () => {
     const supabase = createClient();
+    await fetch("/api/admin/auth/logout", { method: "POST" });
     await supabase.auth.signOut();
     window.location.href = "/";
   };
