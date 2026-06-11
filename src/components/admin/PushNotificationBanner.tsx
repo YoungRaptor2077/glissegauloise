@@ -6,6 +6,7 @@ import { Bell, X } from "lucide-react";
 export function PushNotificationBanner() {
   const [show, setShow] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     // Check if push is supported and not yet subscribed
@@ -36,11 +37,14 @@ export function PushNotificationBanner() {
         });
 
         if (!res.ok) {
+          const errorData = await res.json().catch(() => ({}));
+          console.error("Push resync failed:", res.status, errorData);
           // Server sync failed, show banner so admin can retry
           setShow(true);
         }
         // If sync succeeded, don't show banner (everything is OK)
-      } catch {
+      } catch (err) {
+        console.error("Push resync network error:", err);
         // Network or other error, show banner to allow retry
         setShow(true);
       }
@@ -49,6 +53,7 @@ export function PushNotificationBanner() {
 
   async function handleSubscribe() {
     setLoading(true);
+    setError(null);
     try {
       const permission = await Notification.requestPermission();
       if (permission !== "granted") {
@@ -61,7 +66,7 @@ export function PushNotificationBanner() {
 
       if (!vapidKey) {
         console.error("VAPID public key not configured");
-        setShow(false);
+        setError("Cle VAPID non configuree");
         return;
       }
 
@@ -79,12 +84,15 @@ export function PushNotificationBanner() {
 
       if (res.ok) {
         setShow(false);
+        setError(null);
       } else {
-        const errorData = await res.json();
-        console.error("Push subscribe failed:", errorData);
+        const errorData = await res.json().catch(() => ({ error: "Reponse invalide" }));
+        console.error("Push subscribe failed:", res.status, errorData);
+        setError(errorData.error || "Erreur inconnue");
       }
-    } catch (error) {
-      console.error("Push subscription error:", error);
+    } catch (err) {
+      console.error("Push subscription error:", err);
+      setError("Erreur: " + (err instanceof Error ? err.message : "inconnue"));
     } finally {
       setLoading(false);
     }
@@ -93,28 +101,35 @@ export function PushNotificationBanner() {
   if (!show) return null;
 
   return (
-    <div className="mb-4 flex items-center justify-between rounded-lg border border-vert-neon/20 bg-vert-neon/5 px-4 py-3">
-      <div className="flex items-center gap-3">
-        <Bell size={18} className="text-vert-neon" />
-        <span className="text-sm text-blanc-casse/80">
-          Activez les notifications pour etre alerte des nouveaux messages et reparations.
-        </span>
+    <div className="mb-4">
+      <div className="flex items-center justify-between rounded-lg border border-vert-neon/20 bg-vert-neon/5 px-4 py-3">
+        <div className="flex items-center gap-3">
+          <Bell size={18} className="text-vert-neon" />
+          <span className="text-sm text-blanc-casse/80">
+            Activez les notifications pour etre alerte des nouveaux messages et reparations.
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleSubscribe}
+            disabled={loading}
+            className="rounded-lg bg-vert-neon px-4 py-1.5 text-sm font-medium text-noir-mat transition-opacity hover:opacity-90 disabled:opacity-50"
+          >
+            {loading ? "..." : "Activer les notifications"}
+          </button>
+          <button
+            onClick={() => setShow(false)}
+            className="rounded-lg p-1.5 text-blanc-casse/40 transition-colors hover:text-blanc-casse/80"
+          >
+            <X size={16} />
+          </button>
+        </div>
       </div>
-      <div className="flex items-center gap-2">
-        <button
-          onClick={handleSubscribe}
-          disabled={loading}
-          className="rounded-lg bg-vert-neon px-4 py-1.5 text-sm font-medium text-noir-mat transition-opacity hover:opacity-90 disabled:opacity-50"
-        >
-          {loading ? "..." : "Activer les notifications"}
-        </button>
-        <button
-          onClick={() => setShow(false)}
-          className="rounded-lg p-1.5 text-blanc-casse/40 transition-colors hover:text-blanc-casse/80"
-        >
-          <X size={16} />
-        </button>
-      </div>
+      {error && (
+        <p className="mt-2 text-xs text-red-400">
+          Erreur: {error}
+        </p>
+      )}
     </div>
   );
 }

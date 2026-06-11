@@ -456,21 +456,21 @@ export interface Database {
       push_subscriptions: {
         Row: {
           id: string;
-          user_id: string;
+          user_id: string | null;
           endpoint: string;
           subscription: Json;
           created_at: string;
         };
         Insert: {
           id?: string;
-          user_id: string;
+          user_id?: string | null;
           endpoint: string;
           subscription: Json;
           created_at?: string;
         };
         Update: {
           id?: string;
-          user_id?: string;
+          user_id?: string | null;
           endpoint?: string;
           subscription?: Json;
           created_at?: string;
