@@ -19,6 +19,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(
     process.env.NEXT_PUBLIC_SITE_URL || "https://glissegauloisse.com"
   ),
+  manifest: "/manifest.json",
   title: {
     default: "GlisseGauloisse | Reparation Trottinette Electrique Eaubonne 95",
     template: "%s | GlisseGauloisse",

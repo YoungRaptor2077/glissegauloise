@@ -92,7 +92,12 @@ export function PushNotificationBanner() {
       }
     } catch (err) {
       console.error("Push subscription error:", err);
-      setError("Erreur: " + (err instanceof Error ? err.message : "inconnue"));
+      const msg = err instanceof Error ? err.message : "inconnue";
+      if (msg.includes("push service") || msg.includes("registration")) {
+        setError("Erreur: Verifiez que les notifications sont autorisees dans les parametres de votre navigateur/telephone.");
+      } else {
+        setError("Erreur: " + msg);
+      }
     } finally {
       setLoading(false);
     }
