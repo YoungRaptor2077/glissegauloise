@@ -58,12 +58,17 @@ export async function POST(request: NextRequest) {
     const supabase = createServiceClient();
 
     // Upsert subscription (replace if same endpoint exists)
-    const { error } = await supabase.from("push_subscriptions").upsert(
-      {
-        user_id: userId || "admin",
-        subscription: subscription,
-        endpoint: subscription.endpoint,
-      },
+    const insertData: Record<string, unknown> = {
+      subscription: subscription,
+      endpoint: subscription.endpoint,
+    };
+    if (userId) {
+      insertData.user_id = userId;
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase.from("push_subscriptions") as any).upsert(
+      insertData,
       { onConflict: "endpoint" }
     );
 
