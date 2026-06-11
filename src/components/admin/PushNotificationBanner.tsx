@@ -61,7 +61,28 @@ export function PushNotificationBanner() {
         return;
       }
 
-      const registration = await navigator.serviceWorker.ready;
+      // Ensure SW is registered and active
+      let registration = await navigator.serviceWorker.getRegistration("/sw.js");
+      if (!registration) {
+        registration = await navigator.serviceWorker.register("/sw.js");
+        // Wait for the SW to be active
+        await new Promise<void>((resolve) => {
+          if (registration!.active) {
+            resolve();
+            return;
+          }
+          const sw = registration!.installing || registration!.waiting;
+          if (sw) {
+            sw.addEventListener("statechange", () => {
+              if (sw.state === "activated") resolve();
+            });
+          } else {
+            resolve();
+          }
+        });
+      }
+      await navigator.serviceWorker.ready;
+
       const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
 
       if (!vapidKey) {

@@ -40,34 +40,36 @@ function RepairTimeline({ currentStatus }: { currentStatus: string }) {
   const currentIndex = timelineSteps.indexOf(currentStatus);
 
   return (
-    <div className="flex items-center gap-1 mt-3">
-      {timelineSteps.map((step, index) => (
-        <div key={step} className="flex items-center">
-          <motion.div
-            initial={{ scale: 0.5, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ delay: index * 0.1, type: "spring", stiffness: 300 }}
-            className={`flex items-center justify-center h-6 w-6 rounded-full transition-all duration-500 ${
-              index <= currentIndex
-                ? "bg-vert-neon/20 text-vert-neon ring-2 ring-vert-neon/30"
-                : "bg-white/10 text-white/30"
-            } ${index === currentIndex ? "ring-2 ring-vert-neon animate-pulse" : ""}`}
-            title={statusConfig[step]?.label || step}
-          >
-            {timelineIcons[step]}
-          </motion.div>
-          {index < timelineSteps.length - 1 && (
+    <div className="w-full overflow-x-auto mt-3">
+      <div className="flex items-center gap-0.5 min-w-0">
+        {timelineSteps.map((step, index) => (
+          <div key={step} className="flex items-center shrink-0">
             <motion.div
-              initial={{ scaleX: 0 }}
-              animate={{ scaleX: 1 }}
-              transition={{ delay: index * 0.1 + 0.05, duration: 0.3 }}
-              className={`h-0.5 w-5 origin-left ${
-                index < currentIndex ? "bg-vert-neon" : "bg-white/10"
-              }`}
-            />
-          )}
-        </div>
-      ))}
+              initial={{ scale: 0.5, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: index * 0.1, type: "spring", stiffness: 300 }}
+              className={`flex items-center justify-center h-5 w-5 sm:h-6 sm:w-6 rounded-full transition-all duration-500 ${
+                index <= currentIndex
+                  ? "bg-vert-neon/20 text-vert-neon ring-1 sm:ring-2 ring-vert-neon/30"
+                  : "bg-white/10 text-white/30"
+              } ${index === currentIndex ? "ring-2 ring-vert-neon animate-pulse" : ""}`}
+              title={statusConfig[step]?.label || step}
+            >
+              {timelineIcons[step]}
+            </motion.div>
+            {index < timelineSteps.length - 1 && (
+              <motion.div
+                initial={{ scaleX: 0 }}
+                animate={{ scaleX: 1 }}
+                transition={{ delay: index * 0.1 + 0.05, duration: 0.3 }}
+                className={`h-0.5 w-2 sm:w-4 origin-left ${
+                  index < currentIndex ? "bg-vert-neon" : "bg-white/10"
+                }`}
+              />
+            )}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
