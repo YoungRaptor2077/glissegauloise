@@ -104,9 +104,9 @@ export async function POST(
     }
 
     const body = await request.json();
-    if (!body.content) {
+    if (!body.content && (!body.attachments || body.attachments.length === 0)) {
       return NextResponse.json(
-        { error: "Le contenu est requis" },
+        { error: "Le contenu ou une piece jointe est requis" },
         { status: 400 }
       );
     }
