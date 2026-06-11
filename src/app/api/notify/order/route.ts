@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
+import { sendPushToUser } from "@/lib/push";
 
 const resend = process.env.RESEND_API_KEY
   ? new Resend(process.env.RESEND_API_KEY)
@@ -22,13 +23,19 @@ const statusSubjects: Record<string, string> = {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { email, clientName, orderId, status } = body;
+    const { email, clientName, orderId, status, userId } = body;
 
     if (!email || !status) {
       return NextResponse.json({ error: "Parametres manquants" }, { status: 400 });
     }
 
     if (!resend) {
+      // Still send push notification even if no email API key
+      if (userId) {
+        const subject = statusSubjects[status] || "Mise a jour commande";
+        const message = statusMessages[status] || "Le statut de votre commande a ete mis a jour.";
+        sendPushToUser(userId, subject, message, "/espace-client/commandes").catch(() => {});
+      }
       return NextResponse.json({ success: true, note: "No API key" });
     }
 
@@ -51,6 +58,11 @@ export async function POST(request: NextRequest) {
         </div>
       `,
     });
+
+    // Send push notification to client
+    if (userId) {
+      sendPushToUser(userId, subject, message, "/espace-client/commandes").catch(() => {});
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {

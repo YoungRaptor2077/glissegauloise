@@ -1,5 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { sendPushToUser } from "@/lib/push";
+
+const repairStatusLabels: Record<string, string> = {
+  received: "Reçue",
+  diagnostic: "Diagnostic en cours",
+  awaiting_decision: "En attente de décision",
+  waiting_parts: "En attente de pièces",
+  in_progress: "En cours de réparation",
+  testing: "En phase de test",
+  completed: "Terminée",
+  ready_pickup: "Prête à récupérer",
+  closed: "Clôturée",
+};
 
 function isAdminAuthenticated(request: NextRequest): boolean {
   const cookie = request.cookies.get("admin_session");
@@ -111,6 +124,27 @@ export async function PATCH(
         { error: "Erreur lors de la mise a jour du statut" },
         { status: 500 }
       );
+    }
+
+    // Send push notification to client
+    try {
+      const { data: repair } = await supabase
+        .from("repairs")
+        .select("user_id")
+        .eq("id", id)
+        .single();
+
+      if (repair?.user_id) {
+        const statusFr = repairStatusLabels[body.status] || body.status;
+        sendPushToUser(
+          repair.user_id,
+          "Réparation mise à jour",
+          "Statut: " + statusFr,
+          "/espace-client/reparations"
+        ).catch(() => {});
+      }
+    } catch {
+      // Push notification failed, non-blocking
     }
 
     return NextResponse.json({ success: true });

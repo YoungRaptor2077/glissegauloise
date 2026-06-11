@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { sendPushToUser } from "@/lib/push";
 
 function isAdminAuthenticated(request: NextRequest): boolean {
   const cookie = request.cookies.get("admin_session");
@@ -189,6 +190,16 @@ export async function POST(request: NextRequest) {
           console.error("[Quote Send] Email send error for quote:", quoteId, "error:", emailErr);
         }
       }
+    }
+
+    // Send push notification to client
+    if (quote.user_id) {
+      sendPushToUser(
+        quote.user_id,
+        "Nouveau devis",
+        "Un devis de " + (quote.total || 0) + " EUR est disponible",
+        "/espace-client/devis"
+      ).catch(() => {});
     }
 
     return NextResponse.json({ success: true, paymentUrl: paymentLink.url, emailSent, emailError });

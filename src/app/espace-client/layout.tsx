@@ -18,6 +18,7 @@ import {
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { NotificationBell } from "@/components/client/NotificationBell";
+import { PushNotificationBanner } from "@/components/client/PushNotificationBanner";
 
 const navItems = [
   { label: "Tableau de bord", href: "/espace-client", icon: LayoutDashboard },
@@ -154,7 +155,10 @@ export default function EspaceClientLayout({
           <NotificationBell />
         </div>
 
-        <main className="p-4 sm:p-6 lg:p-8">{children}</main>
+        <main className="p-4 sm:p-6 lg:p-8">
+          <PushNotificationBanner />
+          {children}
+        </main>
       </div>
     </div>
   );

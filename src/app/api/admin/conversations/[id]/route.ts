@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { createClient } from "@/lib/supabase/server";
 import { sendNewMessageEmail } from "@/lib/email";
+import { sendPushToUser } from "@/lib/push";
 
 async function verifyAdmin() {
   const authClient = await createClient();
@@ -167,6 +168,14 @@ export async function POST(
         if (profile?.email) {
           sendNewMessageEmail(profile.email, (profile as { full_name?: string }).full_name || "");
         }
+
+        // Send push notification to client
+        sendPushToUser(
+          convData.user_id,
+          "Nouveau message",
+          body.content.substring(0, 100),
+          "/espace-client/messages"
+        ).catch(() => {});
       }
     } catch {
       // Email notification failed, non-blocking

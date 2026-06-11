@@ -4,26 +4,36 @@ import { createServiceClient } from "@/lib/supabase/service";
 
 export async function POST(request: NextRequest) {
   try {
-    // Simple admin check - admin_session cookie
+    let userId: string | null = null;
+    let isAuthorized = false;
+
+    // Check 1: admin_session cookie (admin)
     const adminCookie = request.cookies.get("admin_session");
-    if (!adminCookie || adminCookie.value !== "authenticated") {
-      // Fallback: check Supabase auth for admin email
-      const supabase = await createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      const adminEmails = ["gdrmathis15@gmail.com", "vanderieviere76@gmail.com"];
-      if (!user || !adminEmails.includes(user.email || "")) {
-        return NextResponse.json({ error: "Non autorise" }, { status: 403 });
+    if (adminCookie && adminCookie.value === "authenticated") {
+      isAuthorized = true;
+      // Try to get user ID from Supabase auth if available
+      try {
+        const supabase = await createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        userId = user?.id || null;
+      } catch {
+        // No user session, that's fine for admin
       }
     }
 
-    // Get user ID if available (optional, column is nullable)
-    let userId: string | null = null;
-    try {
+    // Check 2: Supabase authenticated user (client or admin)
+    if (!isAuthorized) {
       const supabase = await createClient();
       const { data: { user } } = await supabase.auth.getUser();
-      userId = user?.id || null;
-    } catch {
-      // No user, that's fine
+      if (user) {
+        isAuthorized = true;
+        userId = user.id;
+      }
+    }
+
+    // Not authenticated at all
+    if (!isAuthorized) {
+      return NextResponse.json({ error: "Non autorise" }, { status: 401 });
     }
 
     const body = await request.json();
