@@ -82,10 +82,21 @@ export async function sendPushToUser(
 
     const supabase = createServiceClient();
 
-    const { data: subscriptions } = await supabase
+    // Try to find subscriptions for this specific user
+    let { data: subscriptions } = await supabase
       .from("push_subscriptions")
       .select("id, subscription, endpoint")
       .eq("user_id", userId);
+
+    // If no user-specific subscriptions found, also try subscriptions without user_id
+    // This handles the case where user_id wasn't properly stored yet
+    if (!subscriptions || subscriptions.length === 0) {
+      const { data: allSubs } = await supabase
+        .from("push_subscriptions")
+        .select("id, subscription, endpoint")
+        .is("user_id", null);
+      subscriptions = allSubs;
+    }
 
     if (!subscriptions || subscriptions.length === 0) {
       return;

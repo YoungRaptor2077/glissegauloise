@@ -8,7 +8,9 @@ self.addEventListener("activate", function (event) {
 });
 
 self.addEventListener("push", function (event) {
-  const data = event.data ? event.data.json() : {};
+  if (!event.data) return;
+  
+  const data = event.data.json();
   const title = data.title || "GlisseGauloisse";
   const options = {
     body: data.body || "Nouvelle notification",
@@ -17,6 +19,7 @@ self.addEventListener("push", function (event) {
     vibrate: [200, 100, 200],
     tag: data.tag || "glissegauloisse-" + Date.now(),
     renotify: true,
+    requireInteraction: true,
     data: {
       url: data.url || "/",
     },
@@ -31,7 +34,7 @@ self.addEventListener("notificationclick", function (event) {
     self.clients.matchAll({ type: "window", includeUncontrolled: true }).then(function (clientList) {
       for (var i = 0; i < clientList.length; i++) {
         var client = clientList[i];
-        if (client.url.includes("glissegauloisse.com") && "focus" in client) {
+        if ("focus" in client) {
           client.navigate(url);
           return client.focus();
         }
@@ -39,4 +42,10 @@ self.addEventListener("notificationclick", function (event) {
       return self.clients.openWindow(url);
     })
   );
+});
+
+// Keep service worker alive
+self.addEventListener("fetch", function (event) {
+  // Pass through all fetch requests - just keeps SW active
+  return;
 });
