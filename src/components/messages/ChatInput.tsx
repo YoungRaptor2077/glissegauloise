@@ -4,6 +4,7 @@ import { useState, useRef, useCallback } from "react";
 import { Send, Paperclip, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
+import { createClient } from "@/lib/supabase/client";
 
 interface ChatInputProps {
   onSend: (message: string, attachments?: string[]) => void;
@@ -70,22 +71,30 @@ export function ChatInput({
     if (selectedFile) {
       setUploading(true);
       try {
-        const formData = new FormData();
-        formData.append("file", selectedFile);
+        const supabase = createClient();
+        const ext = selectedFile.name.split(".").pop() || "jpg";
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${ext}`;
 
-        const res = await fetch("/api/upload-chat-image", {
-          method: "POST",
-          body: formData,
-        });
+        const { error: uploadError } = await supabase.storage
+          .from("chat-attachments")
+          .upload(fileName, selectedFile, {
+            contentType: selectedFile.type,
+            upsert: false,
+          });
 
-        if (res.ok) {
-          const data = await res.json();
-          if (data.url) {
-            attachments = [data.url];
-          }
+        if (uploadError) {
+          console.error("Upload error:", uploadError);
+          setUploading(false);
+          return;
         }
-      } catch {
-        // Upload failed silently
+
+        const { data: publicUrlData } = supabase.storage
+          .from("chat-attachments")
+          .getPublicUrl(fileName);
+
+        attachments = [publicUrlData.publicUrl];
+      } catch (err) {
+        console.error("Upload error:", err);
       } finally {
         setUploading(false);
       }
